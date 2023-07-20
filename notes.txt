@@ -1,0 +1,4 @@
+-find stimuli
+-decide on proper size of stimuli
+-decide on color of stimuli
+-find location matches
