@@ -1,4 +1,23 @@
 function ShapePositionFinder()
+%-----------------------------------------------------------------------
+% Script: ShapePositionFinder.m
+% Author: Justin Frandsen
+% Date: 07/21/2023
+% Description: 
+% - Matlab script used to place images on their correct locations in scenes 
+%   and output rects for placing them in the main experiment.
+% Usage:
+% - Use W,A,S,D to move the image across the screen. Use - & + to increase
+%   or decrease the size of the shapes, and use space to save that position
+%   and size. After saved it will ask if the shape was on the wall, floor,
+%   or counter.
+% - This function saves the rects for each image in a rect containing
+%   the location and size of each object. Each row represents each scene.
+% - A second .mat file will be saved containing the responses to if the
+%   shape was on the floor, counter, or wall.
+%-----------------------------------------------------------------------
+
+% settings
 image_folder = 'scenes';
 stimuli_folder = 'Stimuli/transparent_black';
 
@@ -24,6 +43,7 @@ y = 0;
 savedPositions = cell(4, 4); %tk change first for to length(scenes_texture_matrix)
 locationTypes = cell(4, 4); %tk first 4 to length(scenes_texture_matrix)
 
+%loop for presenting scenes and their 
 for scene_num = 1:4 %tk change to length(scenes_texture_matrix)
     for i = 1:4
         WaitSecs(0.5);

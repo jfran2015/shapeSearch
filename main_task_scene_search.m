@@ -16,7 +16,7 @@ dummymode=1; %set 0 if using eyetracking, set 1 if not eyetracking (will use mou
 %shuffle the seed for the random number generator
 rng('shuffle')
 
-%magic_cleanup = onCleanup(@pfp_ptb_cleanup); % this is supposed to do
+magic_cleanup = onCleanup(@pfp_ptb_cleanup); % this is supposed to do
 %cleanup when the task completes or throws an error but is not working for
 %me
 

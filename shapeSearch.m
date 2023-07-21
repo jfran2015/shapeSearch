@@ -13,6 +13,8 @@ runNum = 1; %tk remove and uncomment function call
 % - Make sure eyetracker is powered on and connected.
 % - At beginning of task you will be prompted to enter run number
 %   Each Participant should have xx runs.
+% - Make sure shape_location_type.mat & shape_position.mat are saved and
+%   ready
 %
 % Usage:
 % - type function name with subject number and run number (seperated bya
@@ -87,31 +89,9 @@ Screen('Flip', w);
 [allScenesFilePaths, allScenesTextures] = image_stimuli_import(imageFolder, '*.jpg', w);
 
 % Load in shape stimuli
-[nonsidedShapesFilePaths, nonsidedShapesTextures] = image_stimuli_import(nonsidedShapes, '*.png', w);
-% Extract numbers from strings
-shapeNumbers = regexp(nonsidedShapesFilePaths, 'Shape(\d+)', 'tokens');
-shapeNumbers = cellfun(@(x) str2double(x{1}), shapeNumbers);
-% Sort the array based on the numbers
-[~, sortedIndicesNonsided] = sort(shapeNumbers);
-% Apply the same changes to the other matrix
-sortedNonsidedShapesTextures = nonsidedShapesTextures(sortedIndicesNonsided, :);
-
-[leftShapesFilePaths, leftShapesTextures] = image_stimuli_import(shapesTLeft, '*.png', w);
-shapeNumbers = regexp(leftShapesFilePaths, 'Shape(\d+)', 'tokens');
-shapeNumbers = cellfun(@(x) str2double(x{1}), shapeNumbers);
-[~, sortedIndicesLeft] = sort(shapeNumbers);
-% Apply the same changes to the other matrix
-sortedLeftShapesTextures = leftShapesTextures(sortedIndicesLeft, :);
-
-
-[rightShapesFilePaths, rightShapesTextures] = image_stimuli_import(shapesTRight, '*.png', w);
-% Extract numbers from strings
-shapeNumbers = regexp(rightShapesFilePaths, 'Shape(\d+)', 'tokens');
-shapeNumbers = cellfun(@(x) str2double(x{1}), shapeNumbers);
-% Sort the array based on the numbers
-[~, sortedIndicesRight] = sort(shapeNumbers);
-% Apply the same changes to the other matrix
-sortedRightShapesTextures = rightShapesTextures(sortedIndicesRight, :);
+[sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = image_stimuli_import(nonsidedShapes, '*.png', w, true);
+[sortedLeftShapesFilePaths, sortedLeftShapesTextures] = image_stimuli_import(shapesTLeft, '*.png', w, true);
+[sortedRightShapesFilePaths, sortedRightShapesTextures] = image_stimuli_import(shapesTRight, '*.png', w, true);
 
 %randomize presentation order
 trialOrder = 1:4; %tk change to 1:length(allScenesTextures);
@@ -210,7 +190,6 @@ for trialNum = 1:totalTrials
     directionRandomizor = directionRandomizor(randperm(length(directionRandomizor)));
     
     distractorIndex = 1;
-    matchingCondition = false;
     for col = 1:4
         if targetPositionValue == 1 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '1!')
             matchingCondition = true;
@@ -222,26 +201,16 @@ for trialNum = 1:totalTrials
             matchingCondition = false;
         end
         
-        if matchingCondition %draw target
+        if matchingCondition % Draw the target
             shapeSize = shapePositions.savedPositions{thisTrialScene, col};
             if directionRandomizor(col) == 1
                 Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSize);
-                tDirectionTarget{end+1} = 'L'; %tk preallocate before final version
+                tDirectionTarget{end+1} = 'L'; %tk preallocate before the final version
             elseif directionRandomizor(col) == 2
                 Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSize);
-                tDirectionTarget{end+1} = 'R'; %tk preallocate before final version
+                tDirectionTarget{end+1} = 'R'; %tk preallocate before the final version
             end
         end
-        
-        
-        
-        shapeSize = shapePositions.savedPositions{thisTrialScene, col};
-        if directionRandomizor(col) == 1 %displays a distractor with a left T
-            Screen('DrawTexture', w, sortedLeftShapesTextures(distractorTable(trialNum, distractorIndex)), [], shapeSize);
-        elseif directionRandomizor(col) == 2 %displays a distractor with a right T
-            Screen('DrawTexture', w, sortedRightShapesTextures(distractorTable(trialNum, distractorIndex)), [], shapeSize);
-        end
-        distractorIndex = distractorIndex+1;
     end
     
     
