@@ -103,7 +103,7 @@ shapeLocationTypes = load('shape_location_types.mat');
 shapePositions = load('shape_positions.mat');
 
 %set the 4 targets for this participant
-allTargets = randsample(1:length(leftShapesTextures), totalTargets);
+allTargets = randsample(1:length(sortedLeftShapesTextures), totalTargets);
 targetLocationTypeRandomizor = [1, 2, 3, randi([1, 3])];
 randomizedOrder = targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)));
 allTargets(2, :) = randomizedOrder;
@@ -119,20 +119,40 @@ allTargetsShuffled = allTargetsRepeated(:, randomColumnOrder);
 
 % totalDistractorRepitions = totalTrials/totalDistractors; Impliment when
 % we have more trials
-allDistractors = setdiff(1:length(leftShapesTextures), allTargets(1, :), 'stable');
-allDistractorsRepeated = repmat(allDistractors, 1, 2); %tk add totalDistractorRepitions to third agrument
-allDistractorsShuffled = allDistractorsRepeated(randperm(length(allDistractorsRepeated)));
+allDistractors = setdiff(1:length(sortedLeftShapesTextures), allTargets(1, :), 'stable');
+% allDistractorsRepeated = repmat(allDistractors, 1, 2); %tk add totalDistractorRepitions to third agrument
+% allDistractorsShuffled = allDistractorsRepeated(randperm(length(allDistractorsRepeated)));
 
-x=1;
-y=3;
-distractorTable = zeros(totalTrials, 3);
-for trialNum = 1:totalTrials
-    distractorTable(trialNum, :) = allDistractorsShuffled(x:y);
-    x = x+3;
-    y = y+3;
-end
+% x=1;
+% y=3;
+% distractorTable = zeros(totalTrials, 3);
+% for trialNum = 1:totalTrials
+% distractorTable(trialNum, :) = allDistractorsShuffled(x:y);
+%     x = x+3;
+%     y = y+3;
+% end
 
-directionRandomizor = [1, 1, 2, 2];
+%condition radomization
+%possible conditions:
+% - 1 = Target in correct location and additionaltarget is present
+% - 2 = Target is in wrong location with addition target,
+% - 3 = Target is in correct location with no additional target
+% - 4 = Target is in wrong location with no additional target
+conditions = [1, 2, 3, 4];
+
+%deterimines which direction the t faces
+direction = [1, 1, 2, 2];
+
+%determines where the target location will be
+targetPosition = [1, 2, 3];
+
+distractors = 1:22;
+
+counterBalancedConditions = counterBalancer(conditions, 72);
+counterBalancedDirection = counterBalancer(direction, 72);
+counterBalancedTargetPosition = counterBalancer(targetPosition, 72);
+counterBalancedDistractors = counterBalancer(distractors, 72);
+
 
 %==============================Beginning of task========================
 %variables that will be saved out
@@ -187,31 +207,30 @@ for trialNum = 1:totalTrials
     % Draw background scene
     Screen('DrawTexture', w, allScenesTextures(thisTrialScene), [], rect);
     
-    directionRandomizor = directionRandomizor(randperm(length(directionRandomizor)));
     
-    distractorIndex = 1;
-    for col = 1:4
-        if targetPositionValue == 1 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '1!')
-            matchingCondition = true;
-        elseif targetPositionValue == 2 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '2@')
-            matchingCondition = true;
-        elseif targetPositionValue == 3 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '3#')
-            matchingCondition = true;
-        else
-            matchingCondition = false;
-        end
-        
-        if matchingCondition % Draw the target
-            shapeSize = shapePositions.savedPositions{thisTrialScene, col};
-            if directionRandomizor(col) == 1
-                Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSize);
-                tDirectionTarget{end+1} = 'L'; %tk preallocate before the final version
-            elseif directionRandomizor(col) == 2
-                Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSize);
-                tDirectionTarget{end+1} = 'R'; %tk preallocate before the final version
-            end
-        end
-    end
+%     distractorIndex = 1;
+%     for col = 1:4
+%         if targetPositionValue == 1 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '1!')
+%             matchingCondition = true;
+%         elseif targetPositionValue == 2 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '2@')
+%             matchingCondition = true;
+%         elseif targetPositionValue == 3 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '3#')
+%             matchingCondition = true;
+%         else
+%             matchingCondition = false;
+%         end
+%         
+%         if matchingCondition % Draw the target
+%             shapeSize = shapePositions.savedPositions{thisTrialScene, col};
+%             if directionRandomizor(col) == 1
+%                 Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSize);
+%                 tDirectionTarget{end+1} = 'L'; %tk preallocate before the final version
+%             elseif directionRandomizor(col) == 2
+%                 Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSize);
+%                 tDirectionTarget{end+1} = 'R'; %tk preallocate before the final version
+%             end
+%         end
+%     end
     
     
     WaitSecs(1);

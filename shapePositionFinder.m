@@ -3,8 +3,8 @@ function ShapePositionFinder()
 % Script: ShapePositionFinder.m
 % Author: Justin Frandsen
 % Date: 07/21/2023
-% Description: 
-% - Matlab script used to place images on their correct locations in scenes 
+% Description:
+% - Matlab script used to place images on their correct locations in scenes
 %   and output rects for placing them in the main experiment.
 % Usage:
 % - Use W,A,S,D to move the image across the screen. Use - & + to increase
@@ -43,7 +43,7 @@ y = 0;
 savedPositions = cell(4, 4); %tk change first for to length(scenes_texture_matrix)
 locationTypes = cell(4, 4); %tk first 4 to length(scenes_texture_matrix)
 
-%loop for presenting scenes and their 
+%loop for presenting scenes and their
 for scene_num = 1:4 %tk change to length(scenes_texture_matrix)
     for i = 1:4
         WaitSecs(0.5);
@@ -106,8 +106,20 @@ for scene_num = 1:4 %tk change to length(scenes_texture_matrix)
     end
 end
 
+for row = 1:length(locationTypes)
+    for col = 1:4
+        if strcmp(locationTypes{row, col}, '1!')
+            locationTypes{row, col} = 1;
+        elseif strcmp(locationTypes{row, col}, '2@')
+            locationTypes{row, col} = 2;
+        elseif strcmp(locationTypes{row, col}, '3#')
+            locationTypes{row, col} = 3;
+        end
+    end
+end
+
 pfp_ptb_cleanup;
 
-%save shape_positions.mat savedPositions
-%save shape_location_types.mat locationTypes
+save shape_positions.mat savedPositions
+save shape_location_types.mat locationTypes
 end
