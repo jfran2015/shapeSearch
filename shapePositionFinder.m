@@ -118,6 +118,8 @@ for row = 1:length(locationTypes)
     end
 end
 
+locationTypes = cell2mat(locationTypes);
+
 pfp_ptb_cleanup;
 
 save shape_positions.mat savedPositions

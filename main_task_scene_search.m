@@ -393,3 +393,27 @@ Screen('Flip', my_window);
 WaitSecs(0.5);
 
 pfp_ptb_cleanup;
+
+%     distractorIndex = 1;
+%     for col = 1:4
+%         if targetPositionValue == 1 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '1!')
+%             matchingCondition = true;
+%         elseif targetPositionValue == 2 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '2@')
+%             matchingCondition = true;
+%         elseif targetPositionValue == 3 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '3#')
+%             matchingCondition = true;
+%         else
+%             matchingCondition = false;
+%         end
+%         
+%         if matchingCondition % Draw the target
+%             shapeSize = shapePositions.savedPositions{thisTrialScene, col};
+%             if directionRandomizor(col) == 1
+%                 Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSize);
+%                 tDirectionTarget{end+1} = 'L'; %tk preallocate before the final version
+%             elseif directionRandomizor(col) == 2
+%                 Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSize);
+%                 tDirectionTarget{end+1} = 'R'; %tk preallocate before the final version
+%             end
+%         end
+%     end

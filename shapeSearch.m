@@ -102,6 +102,8 @@ trialOrderFull = trialOrderFull(randperm(length(trialOrderFull))); % Shuffle the
 shapeLocationTypes = load('shape_location_types.mat');
 shapePositions = load('shape_positions.mat');
 
+shapeLocationTypes.locationTypes = cell2mat(shapeLocationTypes.locationTypes);
+
 %set the 4 targets for this participant
 allTargets = randsample(1:length(sortedLeftShapesTextures), totalTargets);
 targetLocationTypeRandomizor = [1, 2, 3, randi([1, 3])];
@@ -146,12 +148,17 @@ direction = [1, 1, 2, 2];
 %determines where the target location will be
 targetPosition = [1, 2, 3];
 
-distractors = 1:22;
+%how to choose between if there's two possible locations
+targetChoice = [1, 1, 2, 2];
 
-counterBalancedConditions = counterBalancer(conditions, 72);
-counterBalancedDirection = counterBalancer(direction, 72);
-counterBalancedTargetPosition = counterBalancer(targetPosition, 72);
-counterBalancedDistractors = counterBalancer(distractors, 72);
+%index for the distractors
+distractors = 1:totalDistractors;
+
+cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
+cBDirection = counterBalancer(direction, 72);
+cBTargetPosition = counterBalancer(targetPosition, 72);
+cBTargetChoice = counterBalancer(targetChoice, 72);
+cBDistractors = counterBalancer(distractors, 72);
 
 
 %==============================Beginning of task========================
@@ -207,30 +214,22 @@ for trialNum = 1:totalTrials
     % Draw background scene
     Screen('DrawTexture', w, allScenesTextures(thisTrialScene), [], rect);
     
+    if cBTargetPosition(trialNum) == 1
+        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 1);
+    elseif cBTargetPosition(trialNum) == 2
+        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 2);
+    elseif cBTargetPosition(trialNum) == 3
+        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 3);
+    end
     
-%     distractorIndex = 1;
-%     for col = 1:4
-%         if targetPositionValue == 1 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '1!')
-%             matchingCondition = true;
-%         elseif targetPositionValue == 2 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '2@')
-%             matchingCondition = true;
-%         elseif targetPositionValue == 3 && strcmp(shapeLocationTypes.locationTypes{thisTrialScene, col}, '3#')
-%             matchingCondition = true;
-%         else
-%             matchingCondition = false;
-%         end
-%         
-%         if matchingCondition % Draw the target
-%             shapeSize = shapePositions.savedPositions{thisTrialScene, col};
-%             if directionRandomizor(col) == 1
-%                 Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSize);
-%                 tDirectionTarget{end+1} = 'L'; %tk preallocate before the final version
-%             elseif directionRandomizor(col) == 2
-%                 Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSize);
-%                 tDirectionTarget{end+1} = 'R'; %tk preallocate before the final version
-%             end
-%         end
-%     end
+    if sum(indices_of_position) > 1
+        if cBTargetChoice(trialNum) == 1
+            indices_of_position = indices_of_position(1);
+        else
+            indices_of_position = indices_of_position(2);
+        end
+    end
+    
     
     
     WaitSecs(1);
