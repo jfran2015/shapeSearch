@@ -119,8 +119,6 @@ allDistractors = setdiff(1:length(sortedLeftShapesTextures), allTargets(1, :), '
 % - 4 = Target is in wrong location with no additional target
 conditions = [1, 2, 3, 4];
 
-
-
 %determines where the target location will be
 targetPosition = [1, 2, 3, doubleTargetLocation];
 
@@ -136,7 +134,11 @@ SceneList = 1:length(allScenesTextures);
 %radomizor for trial types
 extraTargetTrials = [0 0 0 1 0 0 0 1];
 
+%randomizor for if target is in correct position
+
+
 cBExtraTargetTrials = counterBalancer(extraTargetTrials, 72);
+cBIncorrectTargetLocation = counterBalancer(extraTargetTrials, 72);
 cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
 cBTargetPosition = counterBalancer(targetPosition, 72);
 cBTargetChoice = counterBalancer(targetChoice, 72); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
@@ -150,7 +152,6 @@ tDirectionAllTrials = zeros(totalTrials, 4);
 for trialNum = 1:totalTrials
     tDirectionAllTrials(trialNum, :) = targetTDirection(randperm(length(targetTDirection)));
 end
-
 
 cBTargetOrder = [];
 cBOrigionalTargetPosition = [];
@@ -169,7 +170,6 @@ for numTargets = 1:length(cBTargetPosition)
     cBTargetOrder(end+1) = allTargets(1, inds);
     cBOrigionalTargetPosition(end+1) = allTargets(2, inds);
 end
-
 
 allDistractorsAllTrials = [];
 for k = 1:12 % 6 reps in the inner loop go into 72 (the random number I picked for number of trials to test these with, so 12 reps)
@@ -202,7 +202,6 @@ subNumForOutput(1:totalTrials) = subNum;
 % Create a cell array to store eye movement data for each trial
 eyeMovementData = cell(1, totalTrials);
 
-
 %-------------------Instructions---------------------------------------------
 DrawFormattedText(w, 'For a <sideways T with bar on left> press z\n and for a <sideways T with bar on right> press /', 'center', 'center')
 Screen('Flip', w);
@@ -221,21 +220,42 @@ end
 possibleLocations = [1 2 3 4];
 % =============== Task for loop ===========================================
 for trialNum = 1:totalTrials
-    
     thisTrialScene = cBSceneOrder(trialNum);
     thisTrialTarget = cBTargetOrder(trialNum);
     
     oldsize = Screen('TextSize', w,60); %make the font size a little bigger when drawing the fixation cross
     DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
     Screen('Flip', w);
+    
+    if cBExtraTargetTrials(trialNum) == 1 && cBIncorrectTargetLocation(trialNum) == 1
+        textToDisplay = 'Extra target present and Incorrect location';
+    elseif cBExtraTargetTrials(trialNum) == 1 && cBIncorrectTargetLocation(trialNum) == 0
+        textToDisplay = 'Extra target present';
+    elseif cBExtraTargetTrials(trialNum) == 0 && cBIncorrectTargetLocation(trialNum) == 1
+        textToDisplay = 'Incorrect location';
+    elseif cBExtraTargetTrials(trialNum) == 0 && cBIncorrectTargetLocation(trialNum) == 0
+        textToDisplay = 'Normal Trial';
+    end
+    
+    DrawFormattedText(w, textToDisplay, 50, 200, [255,255,255]); %tk remove this later
     Screen('DrawTexture', w, sortedNonsidedShapesTextures(thisTrialTarget)); %tk change the size later to reflect the true size on the trial
+    start = 0;
+    
     WaitSecs(1); %TK change to check if they're fixated
     
     Screen('Flip', w);
-    DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
-    WaitSecs(1);
-    
-    Screen('Flip', w);
+    while start==0 % tk delete this entire loop later
+        [key_time,key_code]=KbWait([], 2);
+        resp = find(key_code);
+        if resp(1) == KbName('SPACE') || resp(1) == KbName('space')
+            start = 1;
+        end
+    end
+    % tk uncomment out for full experiment
+    %     DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
+    %     WaitSecs(1);
+    %
+    %     Screen('Flip', w);
     
     % Draw background scene
     Screen('DrawTexture', w, allScenesTextures(cBSceneOrder(trialNum)), [], rect);
@@ -256,6 +276,10 @@ for trialNum = 1:totalTrials
         end
     end
     
+    if cBIncorrectTargetLocation(trialNum) == 1
+        incorrectLocations = setdiff(possibleLocations, positionInds);
+        positionInds = randsample(incorrectLocations, 1);
+    end
     
     targetTDirection = tDirectionAllTrials(trialNum, positionInds);
     shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, positionInds};
@@ -305,8 +329,6 @@ for trialNum = 1:totalTrials
             end
         end
     end
-    
-    
     
     if strcmp(response, 'nan')
         textToShow = 'Too slow!';
