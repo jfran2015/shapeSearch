@@ -133,6 +133,10 @@ distractorsInds = 1:totalDistractors;
 %index for all scenes
 SceneList = 1:length(allScenesTextures);
 
+%radomizor for trial types
+extraTargetTrials = [0 0 0 1 0 0 0 1];
+
+cBExtraTargetTrials = counterBalancer(extraTargetTrials, 72);
 cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
 cBTargetPosition = counterBalancer(targetPosition, 72);
 cBTargetChoice = counterBalancer(targetChoice, 72); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
@@ -140,10 +144,9 @@ cBDistractors = counterBalancer(distractorsInds, 72);
 %cBSceneOrder = counterBalancer(SceneList, 72);
 cBSceneOrder = [1 2 3 4 1 2 3 4];
 
-targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)))
 %deterimines which direction the t faces
 targetTDirection = [1, 1, 2, 2];
-tDirectionAllTrials = zeros(trialNum, 4);
+tDirectionAllTrials = zeros(totalTrials, 4);
 for trialNum = 1:totalTrials
     tDirectionAllTrials(trialNum, :) = targetTDirection(randperm(length(targetTDirection)));
 end
@@ -262,6 +265,14 @@ for trialNum = 1:totalTrials
     elseif targetTDirection == 2
         Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSizeAndPosition);
         tDirectionTarget{end+1} = 'L';
+    end
+    
+    if cBExtraTargetTrials(trialNum) == 1
+        trialInd = randsample(1:3, 1);
+        targetInd = randsample(1:3, 1);
+        possibleDistractorTargets = setdiff(allTargets(1, :), thisTrialTarget);
+        distractorTarget = possibleDistractorTargets(targetInd);
+        allDistractorsAllTrials(trialNum, trialInd) = distractorTarget;
     end
     
     distractorPositions = setdiff(possibleLocations, positionInds);
