@@ -6,22 +6,20 @@ runNum = 1; %tk remove and uncomment function call
 % Author: Justin Frandsen
 % Date: 07/12/2023
 % Description: Matlab script that presents experiment exploring how
-%              learning influences scene grammar.
+%              learning influences attention involving scene synatx.
 %
 % Additional Comments:
 % - Must be in the correct folder to run script.
 % - Make sure eyetracker is powered on and connected.
-% - At beginning of task you will be prompted to enter run number
-%   Each Participant should have xx runs.
 % - Make sure shape_location_type.mat & shape_position.mat are saved and
 %   ready
 %
 % Usage:
-% - type function name with subject number and run number (seperated bya
-%   comma in parentheses
-%   (e.g., shapeSearch(222, 1)).
-% - Script will output a .csv file containing behavioral data and a
-%   .edf file containing eyetracking data.
+% - type function name with subject number and run number (seperated by a
+%   comma in parentheses).(e.g., shapeSearch(222, 1)).
+% - Script will output a .csv file containing behavioral data, a .mat file
+%   containing all matlab script variables, and a .edf file containing
+%   eyetracking data.
 %-----------------------------------------------------------------------
 
 %===================Beginning of real script============================
@@ -138,10 +136,6 @@ distractorsInds = 1:totalDistractors;
 SceneList = 1:length(allScenesTextures);
 
 cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
-cBTargetDirection = counterBalancer(targetDirection, 72);
-cBDistractor1Direction = counterBalancer(distractorDirection, 72);
-cBDistractor2Direction = counterBalancer(distractorDirection, 72);
-cBDistractor3Direction = counterBalancer(distractorDirection, 72);
 cBTargetPosition = counterBalancer(targetPosition, 72);
 cBTargetChoice = counterBalancer(targetChoice, 72); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
 cBDistractors = counterBalancer(distractorsInds, 72);
@@ -168,17 +162,22 @@ end
 
 reps = length(distractorsInds)/3;
 allDistractorsAllTrials = [];
-for trialNum = 1:(72/6) %1:(totalTrials/6) tk change to this code when ready
-    partialDistractorMatrix = [];
-    thisRow = [];
-    for numRepititions = 1:reps
-        
-        temp = randsample(1:length(distractorsInds), 3);
-        thisRow(end+1:end+3) 
-        partialDistractorMatrix(numRepititions, :) = randsample(1:length(distractorsInds), 3);
-        partialDistractorMatrix(numRepititions, :)
+
+for k = 1:12 % 6 reps in the inner loop go into 72 (the random number I picked for number of trials to test these with, so 12 reps)
+    tempDistractors = allDistractors;
+    
+    if exist('oneTrialDistractors','var')
+        clear oneTrialDistractors
     end
-    allDistractorsAllTrials = vertcat(allDistractorsAllTrials, partialDistractorMatrix);
+    
+    for i = 1:6 %there are 18 distractors 18/3 = 6, so thats why 6 repitions
+        if exist('oneTrialDistractors','var')
+            tempDistractors = setdiff(tempDistractors, oneTrialDistractors);
+        end
+        distractorsInds = randsample(1:length(tempDistractors), 3);
+        oneTrialDistractors = tempDistractors(distractorsInds);
+        allDistractorsAllTrials(end+1, :) = oneTrialDistractors;
+    end
 end
 
 %==============================Beginning of task========================
@@ -263,26 +262,37 @@ for trialNum = 1:totalTrials
     distractorPositions = setdiff(possibleLocations, positionInds);
     for position = 1:length(distractorPositions)
         shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, distractorPositions(position)};
-        if position == 1
-            if cBDistractor1Direction(trialNum) == 1
-                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            elseif cBDistractor1Direction(trialNum) == 2
-                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            end
-        elseif position == 2
-            if cBDistractor2Direction(trialNum) == 1
-                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            elseif cBDistractor2Direction(trialNum) == 2
-                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            end
-        elseif position == 3
-            if cBDistractor3Direction(trialNum) == 1
-                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            elseif cBDistractor3Direction(trialNum) == 2
-                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
-            end
+        thisDistractor = allDistractorsAllTrials(trialNum, position);
+        if cBDistractor1Direction(trialNum) == 1
+            Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], shapeSizeAndPosition);
+        elseif cBDistractor1Direction(trialNum) == 2
+            Screen('DrawTexture', w, sortedLeftShapesTextures(thisDistractor), [], shapeSizeAndPosition);
         end
     end
+    
+    
+    %     for position = 1:length(distractorPositions)
+    %         shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, distractorPositions(position)};
+    %         if position == 1
+    %             if cBDistractor1Direction(trialNum) == 1
+    %                 Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             elseif cBDistractor1Direction(trialNum) == 2
+    %                 Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             end
+    %         elseif position == 2
+    %             if cBDistractor2Direction(trialNum) == 1
+    %                 Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             elseif cBDistractor2Direction(trialNum) == 2
+    %                 Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             end
+    %         elseif position == 3
+    %             if cBDistractor3Direction(trialNum) == 1
+    %                 Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             elseif cBDistractor3Direction(trialNum) == 2
+    %                 Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+    %             end
+    %         end
+    
     
     WaitSecs(1);
     stimOnsetTime = Screen('Flip', w);
