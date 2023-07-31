@@ -12,7 +12,7 @@ if mod(numTrials, 12) == 0
             startIndex = startIndex + length(var);
             endIndex = endIndex + length(var);
         else
-            endIndex = 72;
+            endIndex = numTrials;
             varIndex = endIndex-startIndex+1;
             counterBalancedData(startIndex:endIndex) = varToSave(1:varIndex);
         end

@@ -106,33 +106,12 @@ shapeLocationTypes.locationTypes = cell2mat(shapeLocationTypes.locationTypes);
 
 %set the 4 targets for this participant
 allTargets = randsample(1:length(sortedLeftShapesTextures), totalTargets);
-targetLocationTypeRandomizor = [1, 2, 3, randi([1, 3])];
+doubleTargetLocation = randi([1, 3]);
+targetLocationTypeRandomizor = [1, 2, 3, doubleTargetLocation];
 randomizedOrder = targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)));
 allTargets(2, :) = randomizedOrder;
-% Calculate how many times the targets will need repeated
-totalTargetRepitions = totalTrials/totalTargets;
-% Create a vector repeating the target indexes
-allTargetsRepeated = repmat(allTargets, 1, totalTargetRepitions);
-% Shuffle the elements of the vector
-% Randomly reorder the columns
-numColumns = size(allTargetsRepeated, 2);
-randomColumnOrder = randperm(numColumns);
-allTargetsShuffled = allTargetsRepeated(:, randomColumnOrder);
 
-% totalDistractorRepitions = totalTrials/totalDistractors; Impliment when
-% we have more trials
 allDistractors = setdiff(1:length(sortedLeftShapesTextures), allTargets(1, :), 'stable');
-% allDistractorsRepeated = repmat(allDistractors, 1, 2); %tk add totalDistractorRepitions to third agrument
-% allDistractorsShuffled = allDistractorsRepeated(randperm(length(allDistractorsRepeated)));
-
-% x=1;
-% y=3;
-% distractorTable = zeros(totalTrials, 3);
-% for trialNum = 1:totalTrials
-% distractorTable(trialNum, :) = allDistractorsShuffled(x:y);
-%     x = x+3;
-%     y = y+3;
-% end
 
 %condition radomization
 %possible conditions:
@@ -143,23 +122,64 @@ allDistractors = setdiff(1:length(sortedLeftShapesTextures), allTargets(1, :), '
 conditions = [1, 2, 3, 4];
 
 %deterimines which direction the t faces
-direction = [1, 1, 2, 2];
+targetDirection = [1, 1, 2, 2];
+distractorDirection = [1, 1, 2, 2];
 
 %determines where the target location will be
-targetPosition = [1, 2, 3];
+targetPosition = [1, 2, 3, doubleTargetLocation];
 
 %how to choose between if there's two possible locations
 targetChoice = [1, 1, 2, 2];
 
 %index for the distractors
-distractors = 1:totalDistractors;
+distractorsInds = 1:totalDistractors;
+
+%index for all scenes
+SceneList = 1:length(allScenesTextures);
 
 cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
-cBDirection = counterBalancer(direction, 72);
+cBTargetDirection = counterBalancer(targetDirection, 72);
+cBDistractor1Direction = counterBalancer(distractorDirection, 72);
+cBDistractor2Direction = counterBalancer(distractorDirection, 72);
+cBDistractor3Direction = counterBalancer(distractorDirection, 72);
 cBTargetPosition = counterBalancer(targetPosition, 72);
-cBTargetChoice = counterBalancer(targetChoice, 72);
-cBDistractors = counterBalancer(distractors, 72);
+cBTargetChoice = counterBalancer(targetChoice, 72); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
+cBDistractors = counterBalancer(distractorsInds, 72);
+%cBSceneOrder = counterBalancer(SceneList, 72);
+cBSceneOrder = [1 2 3 4 1 2 3 4];
 
+cBTargetOrder = [];
+cBOrigionalTargetPosition = [];
+choice = 1;
+for numTargets = 1:length(cBTargetPosition)
+    inds = find(allTargets(2, :) == cBTargetPosition(numTargets));
+    if length(inds) > 1
+        if choice == 1
+            inds = inds(choice);
+            choice = 2;
+        elseif choice == 2
+            inds = inds(choice);
+            choice = 1;
+        end
+    end
+    cBTargetOrder(end+1) = allTargets(1, inds);
+    cBOrigionalTargetPosition(end+1) = allTargets(2, inds);
+end
+
+reps = length(distractorsInds)/3;
+allDistractorsAllTrials = [];
+for trialNum = 1:(72/6) %1:(totalTrials/6) tk change to this code when ready
+    partialDistractorMatrix = [];
+    thisRow = [];
+    for numRepititions = 1:reps
+        
+        temp = randsample(1:length(distractorsInds), 3);
+        thisRow(end+1:end+3) 
+        partialDistractorMatrix(numRepititions, :) = randsample(1:length(distractorsInds), 3);
+        partialDistractorMatrix(numRepititions, :)
+    end
+    allDistractorsAllTrials = vertcat(allDistractorsAllTrials, partialDistractorMatrix);
+end
 
 %==============================Beginning of task========================
 %variables that will be saved out
@@ -190,14 +210,12 @@ while start==0
 end
 
 %eyetracking code will go here
-
-
+possibleLocations = [1 2 3 4];
 % =============== Task for loop ===========================================
 for trialNum = 1:totalTrials
-    thisTrialScene = trialOrderFull(trialNum);
-    thisTrialTarget = allTargetsShuffled(1, trialNum);
-    targetPositionValue = allTargetsShuffled(2, trialNum);
     
+    thisTrialScene = cBSceneOrder(trialNum);
+    thisTrialTarget = cBTargetOrder(trialNum);
     
     oldsize = Screen('TextSize', w,60); %make the font size a little bigger when drawing the fixation cross
     DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
@@ -212,25 +230,59 @@ for trialNum = 1:totalTrials
     Screen('Flip', w);
     
     % Draw background scene
-    Screen('DrawTexture', w, allScenesTextures(thisTrialScene), [], rect);
+    Screen('DrawTexture', w, allScenesTextures(cBSceneOrder(trialNum)), [], rect);
     
     if cBTargetPosition(trialNum) == 1
-        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 1);
+        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 1);
     elseif cBTargetPosition(trialNum) == 2
-        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 2);
+        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 2);
     elseif cBTargetPosition(trialNum) == 3
-        indices_of_position = find(shapeLocationTypes.locationTypes(trialNum, :) == 3);
+        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 3);
     end
     
-    if sum(indices_of_position) > 1
+    if length(positionInds) > 1
         if cBTargetChoice(trialNum) == 1
-            indices_of_position = indices_of_position(1);
+            positionInds = positionInds(1);
         else
-            indices_of_position = indices_of_position(2);
+            positionInds = positionInds(2);
         end
     end
     
     
+    
+    targetDirection = cBTargetDirection(trialNum);
+    shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, positionInds};
+    if targetDirection == 1
+        Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSizeAndPosition);
+        tDirectionTarget{end+1} = 'R';
+    elseif targetDirection == 2
+        Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSizeAndPosition);
+        tDirectionTarget{end+1} = 'L';
+    end
+    
+    distractorPositions = setdiff(possibleLocations, positionInds);
+    for position = 1:length(distractorPositions)
+        shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, distractorPositions(position)};
+        if position == 1
+            if cBDistractor1Direction(trialNum) == 1
+                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            elseif cBDistractor1Direction(trialNum) == 2
+                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            end
+        elseif position == 2
+            if cBDistractor2Direction(trialNum) == 1
+                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            elseif cBDistractor2Direction(trialNum) == 2
+                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            end
+        elseif position == 3
+            if cBDistractor3Direction(trialNum) == 1
+                Screen('DrawTexture', w, sortedRightShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            elseif cBDistractor3Direction(trialNum) == 2
+                Screen('DrawTexture', w, sortedLeftShapesTextures(cBDistractors(trialNum)), [], shapeSizeAndPosition);
+            end
+        end
+    end
     
     WaitSecs(1);
     stimOnsetTime = Screen('Flip', w);
@@ -239,7 +291,7 @@ for trialNum = 1:totalTrials
     response = 'nan';
     RT = NaN;
     startTime = GetSecs();
-    while GetSecs() - startTime <= 20
+    while GetSecs() - startTime <= 15
         [key_is_down, secs, key_code] = KbCheck;
         if key_is_down
             responseKey = KbName(key_code);
