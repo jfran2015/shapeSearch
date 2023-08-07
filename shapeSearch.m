@@ -34,7 +34,7 @@ shapesTLeft             = 'Stimuli/Black_Left_T';
 shapesTRight            = 'Stimuli/Black_Right_T';
 
 % Task variables
-totalTrials           = 8;%must be a multiple of 4
+trialsPerRun          = 72;%must be a multiple of 4
 totalTargets          = 4;
 totalDistractors      = 18;
 stimuliSizeRect       = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
@@ -91,104 +91,18 @@ Screen('Flip', w);
 [sortedLeftShapesFilePaths, sortedLeftShapesTextures] = image_stimuli_import(shapesTLeft, '*.png', w, true);
 [sortedRightShapesFilePaths, sortedRightShapesTextures] = image_stimuli_import(shapesTRight, '*.png', w, true);
 
-%randomize presentation order
-trialOrder = 1:4; %tk change to 1:length(allScenesTextures);
-trialOrderFull = repmat(trialOrder, 1, 2); % Repeat the trialOrder vector twice
-trialOrderFull = trialOrderFull(randperm(length(trialOrderFull))); % Shuffle the elements randomly
+% %randomize presentation order
+% trialOrder = 1:4; %tk change to 1:length(allScenesTextures);
+% trialOrderFull = repmat(trialOrder, 1, 2); % Repeat the trialOrder vector twice
+% trialOrderFull = trialOrderFull(randperm(length(trialOrderFull))); % Shuffle the elements randomly
 
-%load variables for where the shapes are located and what postion theyre in
+%load
 shapeLocationTypes = load('shape_location_types.mat');
 shapePositions = load('shape_positions.mat');
 
-shapeLocationTypes.locationTypes = cell2mat(shapeLocationTypes.locationTypes);
-
-%set the 4 targets for this participant
-allTargets = randsample(1:length(sortedLeftShapesTextures), totalTargets);
-doubleTargetLocation = randi([1, 3]);
-targetLocationTypeRandomizor = [1, 2, 3, doubleTargetLocation];
-randomizedOrder = targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)));
-allTargets(2, :) = randomizedOrder;
-
-allDistractors = setdiff(1:length(sortedLeftShapesTextures), allTargets(1, :), 'stable');
-
-%condition radomization
-%possible conditions:
-% - 1 = Target in correct location and additionaltarget is present
-% - 2 = Target is in wrong location with addition target,
-% - 3 = Target is in correct location with no additional target
-% - 4 = Target is in wrong location with no additional target
-conditions = [1, 2, 3, 4];
-
-%determines where the target location will be
-targetPosition = [1, 2, 3, doubleTargetLocation];
-
-%how to choose between if there's two possible locations
-targetChoice = [1, 1, 2, 2];
-
-%index for the distractors
-distractorsInds = 1:totalDistractors;
-
-%index for all scenes
-SceneList = 1:length(allScenesTextures);
-
-%radomizor for trial types
-extraTargetTrials = [0 0 0 1 0 0 0 1];
-
-%randomizor for if target is in correct position
-
-
-cBExtraTargetTrials = counterBalancer(extraTargetTrials, 72);
-cBIncorrectTargetLocation = counterBalancer(extraTargetTrials, 72);
-cBConditions = counterBalancer(conditions, 72); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
-cBTargetPosition = counterBalancer(targetPosition, 72);
-cBTargetChoice = counterBalancer(targetChoice, 72); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
-cBDistractors = counterBalancer(distractorsInds, 72);
-%cBSceneOrder = counterBalancer(SceneList, 72);
-cBSceneOrder = [1 2 3 4 1 2 3 4];
-
-%deterimines which direction the t faces
-targetTDirection = [1, 1, 2, 2];
-tDirectionAllTrials = zeros(totalTrials, 4);
-for trialNum = 1:totalTrials
-    tDirectionAllTrials(trialNum, :) = targetTDirection(randperm(length(targetTDirection)));
-end
-
-cBTargetOrder = [];
-cBOrigionalTargetPosition = [];
-choice = 1;
-for numTargets = 1:length(cBTargetPosition)
-    inds = find(allTargets(2, :) == cBTargetPosition(numTargets));
-    if length(inds) > 1
-        if choice == 1
-            inds = inds(choice);
-            choice = 2;
-        elseif choice == 2
-            inds = inds(choice);
-            choice = 1;
-        end
-    end
-    cBTargetOrder(end+1) = allTargets(1, inds);
-    cBOrigionalTargetPosition(end+1) = allTargets(2, inds);
-end
-
-allDistractorsAllTrials = [];
-for k = 1:12 % 6 reps in the inner loop go into 72 (the random number I picked for number of trials to test these with, so 12 reps)
-    tempDistractors = allDistractors;
-    
-    if exist('oneTrialDistractors','var')
-        clear oneTrialDistractors
-    end
-    
-    for i = 1:6 %there are 18 distractors 18/3 = 6, so thats why 6 repitions
-        if exist('oneTrialDistractors','var')
-            tempDistractors = setdiff(tempDistractors, oneTrialDistractors);
-        end
-        distractorsInds = randsample(1:length(tempDistractors), 3);
-        oneTrialDistractors = tempDistractors(distractorsInds);
-        allDistractorsAllTrials(end+1, :) = oneTrialDistractors;
-    end
-end
-
+%load variables for where the shapes are located and what postion theyre in
+randomizor = fullRandomizor(trialsPerRun, allScenesTextures, sortedNonsidedShapesTextures, totalTargets);
+this_subj_this_run = randomizor.(sprintf('subj%d', subNum)).(sprintf('run%d', runNum)); %method of getting into the struct
 %==============================Beginning of task========================
 %variables that will be saved out
 rtAll = [];
@@ -220,25 +134,30 @@ end
 possibleLocations = [1 2 3 4];
 % =============== Task for loop ===========================================
 for trialNum = 1:totalTrials
-    thisTrialScene = cBSceneOrder(trialNum);
-    thisTrialTarget = cBTargetOrder(trialNum);
+    sceneInds = this_subj_this_run.cBSceneOrder(trialNum);
+    targetInds = this_subj_this_run.cBTargetOrder(trialNum);
+    thisTrialIncorrectTargetLocation = this_subj_this_run.cBIncorrectTargetLocation(trialNum);
+    thisTrialExtraTarget = this_subj_this_run.cBExtraTargetTrials(trialNum);
+    targetPosition = this_subj_this_run.cBOrigionalTargetPosition(trialNum);
+    targetChoice = this_subj_this_run.cBTargetChoice(trialNum);
+    tDirectionThisTrial = this_subj_this_run.tDirectionAllTrials(trialNum, :);
     
     oldsize = Screen('TextSize', w,60); %make the font size a little bigger when drawing the fixation cross
     DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
     Screen('Flip', w);
     
-    if cBExtraTargetTrials(trialNum) == 1 && cBIncorrectTargetLocation(trialNum) == 1
+    if thisTrialExtraTarget == 1 && thisTrialIncorrectTargetLocation == 1
         textToDisplay = 'Extra target present and Incorrect location';
-    elseif cBExtraTargetTrials(trialNum) == 1 && cBIncorrectTargetLocation(trialNum) == 0
+    elseif thisTrialExtraTarget == 1 && thisTrialIncorrectTargetLocation == 0
         textToDisplay = 'Extra target present';
-    elseif cBExtraTargetTrials(trialNum) == 0 && cBIncorrectTargetLocation(trialNum) == 1
+    elseif thisTrialExtraTarget == 0 && thisTrialIncorrectTargetLocation == 1
         textToDisplay = 'Incorrect location';
-    elseif cBExtraTargetTrials(trialNum) == 0 && cBIncorrectTargetLocation(trialNum) == 0
+    elseif thisTrialExtraTarget == 0 && thisTrialIncorrectTargetLocation == 0
         textToDisplay = 'Normal Trial';
     end
     
     DrawFormattedText(w, textToDisplay, 50, 200, [255,255,255]); %tk remove this later
-    Screen('DrawTexture', w, sortedNonsidedShapesTextures(thisTrialTarget)); %tk change the size later to reflect the true size on the trial
+    Screen('DrawTexture', w, sortedNonsidedShapesTextures(targetInds)); %tk change the size later to reflect the true size on the trial
     start = 0;
     
     WaitSecs(1); %TK change to check if they're fixated
@@ -258,43 +177,43 @@ for trialNum = 1:totalTrials
     %     Screen('Flip', w);
     
     % Draw background scene
-    Screen('DrawTexture', w, allScenesTextures(cBSceneOrder(trialNum)), [], rect);
+    Screen('DrawTexture', w, allScenesTextures(sceneInds), [], rect);
     
-    if cBTargetPosition(trialNum) == 1
-        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 1);
-    elseif cBTargetPosition(trialNum) == 2
-        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 2);
-    elseif cBTargetPosition(trialNum) == 3
-        positionInds = find(shapeLocationTypes.locationTypes(thisTrialScene, :) == 3);
+    if targetPosition == 1
+        positionInds = find(shapeLocationTypes.locationTypes(sceneInds, :) == 1);
+    elseif targetPosition == 2
+        positionInds = find(shapeLocationTypes.locationTypes(sceneInds, :) == 2);
+    elseif targetPosition == 3
+        positionInds = find(shapeLocationTypes.locationTypes(sceneInds, :) == 3);
     end
     
     if length(positionInds) > 1
-        if cBTargetChoice(trialNum) == 1
+        if targetChoice == 1
             positionInds = positionInds(1);
         else
             positionInds = positionInds(2);
         end
     end
     
-    if cBIncorrectTargetLocation(trialNum) == 1
+    if thisTrialIncorrectTargetLocation == 1
         incorrectLocations = setdiff(possibleLocations, positionInds);
         positionInds = randsample(incorrectLocations, 1);
     end
     
-    targetTDirection = tDirectionAllTrials(trialNum, positionInds);
-    shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, positionInds};
-    if targetTDirection == 1
-        Screen('DrawTexture', w, sortedRightShapesTextures(thisTrialTarget), [], shapeSizeAndPosition);
+    tDirection = tDirectionThisTrial(positionInds);
+    shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, positionInds};
+    if tDirection == 1
+        Screen('DrawTexture', w, sortedRightShapesTextures(targetInds), [], shapeSizeAndPosition);
         tDirectionTarget{end+1} = 'R';
-    elseif targetTDirection == 2
-        Screen('DrawTexture', w, sortedLeftShapesTextures(thisTrialTarget), [], shapeSizeAndPosition);
+    elseif tDirection == 2
+        Screen('DrawTexture', w, sortedLeftShapesTextures(targetInds), [], shapeSizeAndPosition);
         tDirectionTarget{end+1} = 'L';
     end
     
     if cBExtraTargetTrials(trialNum) == 1
         trialInd = randsample(1:3, 1);
         targetInd = randsample(1:3, 1);
-        possibleDistractorTargets = setdiff(allTargets(1, :), thisTrialTarget);
+        possibleDistractorTargets = setdiff(allTargets(1, :), targetInds);
         distractorTarget = possibleDistractorTargets(targetInd);
         allDistractorsAllTrials(trialNum, trialInd) = distractorTarget;
     end
@@ -302,7 +221,7 @@ for trialNum = 1:totalTrials
     distractorPositions = setdiff(possibleLocations, positionInds);
     for position = 1:length(distractorPositions)
         distractorTDirection = tDirectionAllTrials(trialNum, distractorPositions(position));
-        shapeSizeAndPosition = shapePositions.savedPositions{thisTrialScene, distractorPositions(position)};
+        shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, distractorPositions(position)};
         thisDistractor = allDistractorsAllTrials(trialNum, position);
         if distractorTDirection == 1
             Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], shapeSizeAndPosition);
@@ -348,7 +267,7 @@ for trialNum = 1:totalTrials
     Screen('Flip', w);
     WaitSecs(0.5);
     
-    fileName{end+1} = allScenesFilePaths(thisTrialScene); %tk preallocate before final version
+    fileName{end+1} = allScenesFilePaths(sceneInds); %tk preallocate before final version
     responses{end+1} = response; %tk preallocate before final version
     rtAll(end+1) = RT; %tk preallocate before final version
 end
