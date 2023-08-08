@@ -28,10 +28,10 @@ stimuli_folder = 'Stimuli/transparent_black';
 Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA'); %allows the .png files to be transparent
 
 %load all .jpg files in the images directory.
-[scenes_file_path_matrix, scenes_texture_matrix] = image_stimuli_import(image_folder, '*.jpg', w);
+[scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(image_folder, '*.jpg', w);
 
 %load in stimuli
-[stimuli_file_path_matrix, stimuli_texture_matrix] = image_stimuli_import(stimuli_folder, '*.png', w);
+[~, stimuli_texture_matrix] = imageStimuliImport(stimuli_folder, '*.png', w);
 
 % Set initial position of the texture
 textureSize = [0, 0, 240, 240]; % Adjust the size of the texture as desired
@@ -44,7 +44,7 @@ savedPositions = cell(4, 4); %tk change first for to length(scenes_texture_matri
 locationTypes = cell(4, 4); %tk first 4 to length(scenes_texture_matrix)
 
 %loop for presenting scenes and their
-for scene_num = 1:4 %tk change to length(scenes_texture_matrix)
+for scene_num = 1:length(scenes_texture_matrix)
     for i = 1:4
         WaitSecs(0.5);
         running = true;
@@ -77,6 +77,8 @@ for scene_num = 1:4 %tk change to length(scenes_texture_matrix)
                 if scaler > .1
                     scaler = scaler-.01;
                 end
+            elseif keyIsDown && keyCode(KbName('o'))
+                disp(scenes_file_path_matrix(scene_num))
             elseif keyIsDown && keyCode(KbName('ESCAPE'))
                 pfp_ptb_cleanup
             end

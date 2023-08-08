@@ -5,7 +5,6 @@ if mod(numTrials, 12) == 0
     endIndex = length(var);
     numberOfRepititions = ceil(numTrials/length(var));
     for i = 1:numberOfRepititions
-        disp(i);
         varToSave = var(randperm(length(var)));
         if endIndex <= numTrials
             counterBalancedData(startIndex:endIndex) = varToSave;

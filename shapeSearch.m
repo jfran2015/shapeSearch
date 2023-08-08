@@ -34,12 +34,12 @@ shapesTLeft             = 'Stimuli/Black_Left_T';
 shapesTRight            = 'Stimuli/Black_Right_T';
 
 % Task variables
-trialsPerRun          = 72;%must be a multiple of 4
+trialsPerRun          = 60;% 72 must be a multiple of 4
 totalTargets          = 4;
 totalDistractors      = 18;
 stimuliSizeRect       = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
-stimuliLocationMatrix = [1000, 100, 1000, 100]; %this matrix can be used to move the stimuli. This will be replaced
-stimuliScaler         = .25; %you can multiply the size Rect by this to grow or shrink the size of the stimuli.
+%stimuliLocationMatrix = [1000, 100, 1000, 100]; %this matrix can be used to move the stimuli. This will be replaced
+%stimuliScaler         = .25; %you can multiply the size Rect by this to grow or shrink the size of the stimuli.
 
 % PTB Settings
 WinNum = 0;
@@ -84,12 +84,12 @@ DrawFormattedText(w, 'Loading Images...', 'center', 'center');
 Screen('Flip', w);
 
 % Load all .jpg files in the scenes folder.
-[allScenesFilePaths, allScenesTextures] = image_stimuli_import(imageFolder, '*.jpg', w);
+[allScenesFilePaths, allScenesTextures] = imageStimuliImport(imageFolder, '*.jpg', w);
 
 % Load in shape stimuli
-[sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = image_stimuli_import(nonsidedShapes, '*.png', w, true);
-[sortedLeftShapesFilePaths, sortedLeftShapesTextures] = image_stimuli_import(shapesTLeft, '*.png', w, true);
-[sortedRightShapesFilePaths, sortedRightShapesTextures] = image_stimuli_import(shapesTRight, '*.png', w, true);
+[sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = imageStimuliImport(nonsidedShapes, '*.png', w, true);
+[sortedLeftShapesFilePaths, sortedLeftShapesTextures] = imageStimuliImport(shapesTLeft, '*.png', w, true);
+[sortedRightShapesFilePaths, sortedRightShapesTextures] = imageStimuliImport(shapesTRight, '*.png', w, true);
 
 % %randomize presentation order
 % trialOrder = 1:4; %tk change to 1:length(allScenesTextures);
@@ -110,13 +110,13 @@ responses = {};
 tDirectionTarget = {};
 accuracy = [];
 fileName = {};
-thisRunTrialNumbers = 1:totalTrials;
-subNumForOutput(1:totalTrials) = subNum;
+thisRunTrialNumbers = 1:trialsPerRun;
+subNumForOutput(1:trialsPerRun) = subNum;
 
 % Create a cell array to store eye movement data for each trial
-eyeMovementData = cell(1, totalTrials);
+eyeMovementData = cell(1, trialsPerRun);
 
-%-------------------Instructions---------------------------------------------
+%-------------------Instructions----------------------------------------
 DrawFormattedText(w, 'For a <sideways T with bar on left> press z\n and for a <sideways T with bar on right> press /', 'center', 'center')
 Screen('Flip', w);
 
@@ -132,8 +132,9 @@ end
 
 %eyetracking code will go here
 possibleLocations = [1 2 3 4];
+allTargets = this_subj_this_run.allTargets;
 % =============== Task for loop ===========================================
-for trialNum = 1:totalTrials
+for trialNum = 1:trialsPerRun
     sceneInds = this_subj_this_run.cBSceneOrder(trialNum);
     targetInds = this_subj_this_run.cBTargetOrder(trialNum);
     thisTrialIncorrectTargetLocation = this_subj_this_run.cBIncorrectTargetLocation(trialNum);
@@ -141,6 +142,7 @@ for trialNum = 1:totalTrials
     targetPosition = this_subj_this_run.cBOrigionalTargetPosition(trialNum);
     targetChoice = this_subj_this_run.cBTargetChoice(trialNum);
     tDirectionThisTrial = this_subj_this_run.tDirectionAllTrials(trialNum, :);
+    thisTrialDistractors = this_subj_this_run.allDistractorsAllTrials(trialNum, :);
     
     oldsize = Screen('TextSize', w,60); %make the font size a little bigger when drawing the fixation cross
     DrawFormattedText(w, '+', 'center', 'center', [255,255,255]); %draws the fixation cross (a plus-sign) at the center of the screen
@@ -210,19 +212,19 @@ for trialNum = 1:totalTrials
         tDirectionTarget{end+1} = 'L';
     end
     
-    if cBExtraTargetTrials(trialNum) == 1
+    if thisTrialExtraTarget == 1
         trialInd = randsample(1:3, 1);
         targetInd = randsample(1:3, 1);
         possibleDistractorTargets = setdiff(allTargets(1, :), targetInds);
         distractorTarget = possibleDistractorTargets(targetInd);
-        allDistractorsAllTrials(trialNum, trialInd) = distractorTarget;
+        thisTrialDistractors(trialInd) = distractorTarget;
     end
     
     distractorPositions = setdiff(possibleLocations, positionInds);
     for position = 1:length(distractorPositions)
-        distractorTDirection = tDirectionAllTrials(trialNum, distractorPositions(position));
+        distractorTDirection = tDirectionThisTrial(distractorPositions(position));
         shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, distractorPositions(position)};
-        thisDistractor = allDistractorsAllTrials(trialNum, position);
+        thisDistractor = thisTrialDistractors(position);
         if distractorTDirection == 1
             Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], shapeSizeAndPosition);
         elseif distractorTDirection == 2
@@ -276,7 +278,7 @@ DrawFormattedText(w, 'Saving Data...', 'center', 'center');
 Screen('Flip', w);
 
 outputData = {'sub_num' 'file_name' 'trial_num'  'rt' 'response' 't_direction' 'accuracy';};
-for col = 1:totalTrials
+for col = 1:trialsPerRun
     outputData{col+1, 1} = subNumForOutput(1, col);
     outputData{col+1, 2} = fileName(1, col);
     outputData{col+1, 3} = thisRunTrialNumbers(1, col);
