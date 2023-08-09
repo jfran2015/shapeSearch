@@ -18,3 +18,11 @@ scenes\pexels-hakim-santoso-3634740.jpg
 scenes\pexels-keegan-checks-10117737.jpg
 scenes\pexels-max-rahubovskiy-6969860.jpg
 scenes\pexels-pixabay-279648.jpg
+
+To do:
+- Make sure scenes can't appear back to back
+- Make sure frequencies are occuring like they are supposed to. 
+- Read more about how to properly collect eyetracking data.
+- Look into sending the eyetracker the image(scene with shapes) that is presented to the participant
+- Choose correct calibration locations
+- 

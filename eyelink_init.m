@@ -1,10 +1,10 @@
-function el = eyelink_init(window, edfFileName)
+function el = eyelink_init(w, edfFileName, width, height)
 
 % =========================================================================
 % =============== Initialize the eyetracker! ==============================
 % =========================================================================
 
-el=EyelinkInitDefaults(window); %starts with EyeLink default settings
+el=EyelinkInitDefaults(w); %starts with EyeLink default settings
 
 el.backgroundcolour = BlackIndex(el.window); %background color of calibration display
 el.msgfontcolour  = WhiteIndex(el.window); %font color for calibration display
@@ -47,10 +47,10 @@ Eyelink('command','screen_pixel_coords = %ld %ld %ld %ld', 0, 0, width-1, height
 Eyelink('message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, width-1, height-1);
 
 %sets up some more EyeLink settings
-Eyelink('command', 'calibration_type = HV5'); %5-point calibration
+Eyelink('command', 'calibration_type = HV9'); %9-point calibration
 Eyelink('command', 'generate_default_targets = YES'); %use default targets for calibration (you just defined what default is above)
-Eyelink('Command', 'calibration_area_proportion 0.85 0.85'); %calibrate and 85% of the screen extent (the circles/targets only go 85% of the way out from center -- you only need to calibrate the useful extent of the monitor)
-Eyelink('Command', 'validation_area_proportion  0.85 0.85'); %validate at 85% of the screen extend (see above)
+Eyelink('Command', 'calibration_area_proportion 1.00 1.00'); %calibrate and 85% of the screen extent (the circles/targets only go 85% of the way out from center -- you only need to calibrate the useful extent of the monitor)
+Eyelink('Command', 'validation_area_proportion  1.00 1.00'); %validate at 85% of the screen extend (see above)
 Eyelink('command', 'saccade_velocity_threshold = 35'); %threshold for computing/defining saccades in the EDF file (only effects what the EDF file logs)
 Eyelink('command', 'saccade_acceleration_threshold = 9500'); %threshold for computing/defining saccades in the EDF file (only effects what the EDF file logs)
 
