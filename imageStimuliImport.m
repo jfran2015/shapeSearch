@@ -1,4 +1,4 @@
-function[filePathMatrix, textureMatrix] = imageStimuliImport(fileDirectory, fileType, w, sortLogical)
+function[filePathMatrix, textureMatrix, imgMatrix] = imageStimuliImport(fileDirectory, fileType, w, sortLogical)
 %-------------------------------------------------------------------------
 % Script: detectKeyPressed.m
 % Author: Justin Frandsen
@@ -11,8 +11,8 @@ function[filePathMatrix, textureMatrix] = imageStimuliImport(fileDirectory, file
 %   beginning (i.e., '*.png') and ptb window.
 % - Script will output a matrix containing the file paths for the images
 %   and a matrix containing textures which can be displayed using ptb
-% - If sort is true then when it will sort the textures and paths 
-%   matrixes based on numbers in the file names 
+% - If sort is true then when it will sort the textures and paths
+%   matrixes based on numbers in the file names
 %-------------------------------------------------------------------------
 if nargin < 4
     sortLogical = false;
@@ -21,6 +21,7 @@ end
 myFiles = dir(fullfile(fileDirectory, fileType));
 filePathMatrix = string(zeros(length(myFiles), 1)); %matrix that contains all image file paths
 textureMatrix = zeros(length(myFiles), 1); %matrix that contains all the textures of the image files
+imgMatrix = zeros(length(myFiles), 1);
 for k = 1:length(myFiles)
     baseFileName = myFiles(k).name;
     fullFilePath = string(fullfile(fileDirectory, baseFileName));
@@ -30,13 +31,14 @@ for k = 1:length(myFiles)
     if fileType == '*.png'
         [loadedImg, ~, alpha] = imread(fullFilePath);
         loadedImg(:, :, 4) = alpha;
-        textureMatrix(k) = Screen('MakeTexture', w, loadedImg);
-        filePathMatrix(k, 1) = fullFilePath;
     else
         loadedImg = imread(fullFilePath);
-        textureMatrix(k) = Screen('MakeTexture', w, loadedImg);
-        filePathMatrix(k, 1) = fullFilePath;
+        
+        
     end
+    imgMatrix(k)= loadedImg;
+    textureMatrix(k) = Screen('MakeTexture', w, loadedImg);
+    filePathMatrix(k, 1) = fullFilePath;
 end
 
 if sortLogical == true

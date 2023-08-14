@@ -85,14 +85,15 @@ else
             %radomizor for trial types
             extraTargetTrials = [0 0 0 1 0 0 0 1];
             
-            %randomizor for if target is in correct position
             
             
-            %cBExtraTargetTrials = counterBalancer(extraTargetTrials, trialsPerRun);
-            %cBIncorrectTargetLocation = counterBalancer(extraTargetTrials, trialsPerRun); %I needed a number divisible by 12 because of the nature of the counterbalancing. 72 is arbetrary
+            
+            
             cBTargetPosition = counterBalancer(targetPosition, trialsPerRun);
             cBTargetChoice = counterBalancer(targetChoice, trialsPerRun); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
-            %cBSceneOrder = counterBalancer(SceneList, trialsPerRun);
+            
+            
+            
             
             
             
@@ -103,6 +104,8 @@ else
                 tDirectionAllTrials(trialNum, :) = tDirection(randperm(length(tDirection)));
             end
             
+            %matches up the target order to the target location type 
+            %tk I will need to check over this code.
             cBTargetOrder = [];
             cBOrigionalTargetPosition = [];
             choice = 1;
@@ -121,6 +124,10 @@ else
                 cBOrigionalTargetPosition(end+1) = allTargets(2, inds);
             end
             
+            %this loop goes through and gets three distractors and makes
+            %sure they are evenly spaced out thoughout the study
+            %tk I will need to go over this loop and make sure its
+            %performing as I want
             allDistractorsAllTrials = [];
             for k = 1:12 % 6 reps in the inner loop go into 72 (the random number I picked for number of trials to test these with, so 12 reps)
                 tempDistractors = allDistractors;
@@ -148,12 +155,13 @@ else
             runStruct.('cBSceneOrder') = sceneOrder;
             runStruct.('cBIncorrectTargetLocation') = incorrectTargetLocation;
             runStruct.('cBExtraTargetTrials') = extraTargetTrials;
-            runStruct.('allDistractorsAllTrials') = allDistractorsAllTrials; % You can set initial values if needed
+            runStruct.('allDistractorsAllTrials') = allDistractorsAllTrials;
             runStruct.('cBOrigionalTargetPosition') = cBOrigionalTargetPosition;
             runStruct.('cBTargetOrder') = cBTargetOrder;
             runStruct.('tDirectionAllTrials') = tDirectionAllTrials;
             runStruct.('cBTargetChoice') = cBTargetChoice;
             runStruct.('allTargets') = allTargets;
+            %runStruct.('targetLocationTypeRandomizor') = targetLocationTypeRandomizor;
             
             % Add the run struct to the subject struct
             subjectStruct.(runStructName) = runStruct;
@@ -162,4 +170,28 @@ else
         randomizor.(subStructName) = subjectStruct;
     end
 end
+end
+
+function counterBalancedData = counterBalancer(var, numTrials)
+if mod(numTrials, 12) == 0
+    counterBalancedData = zeros(size(var));
+    startIndex = 1;
+    endIndex = length(var);
+    numberOfRepititions = ceil(numTrials/length(var));
+    for i = 1:numberOfRepititions
+        varToSave = var(randperm(length(var)));
+        if endIndex <= numTrials
+            counterBalancedData(startIndex:endIndex) = varToSave;
+            startIndex = startIndex + length(var);
+            endIndex = endIndex + length(var);
+        else
+            endIndex = numTrials;
+            varIndex = endIndex-startIndex+1;
+            counterBalancedData(startIndex:endIndex) = varToSave(1:varIndex);
+        end
+    end
+else
+    error('Input for numTrials must be divisiable by 12!')
+end
+save randomizor.mat randomizor
 end

@@ -25,4 +25,7 @@ To do:
 - Read more about how to properly collect eyetracking data.
 - Look into sending the eyetracker the image(scene with shapes) that is presented to the participant
 - Choose correct calibration locations
-- 
+- Ask Dr. Anderson about calibration and also drift correction
+- Add code that displays the center fixation on the tracker pc
+- Make sure all variables are being saved in the table. I am unsure if shape, shape_position, or shape location type are being saved.
+- Add functionality to check if objects are overlapping, and if they are highlight when they are different possion types (floor and counter)
