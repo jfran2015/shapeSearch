@@ -85,18 +85,10 @@ else
             %radomizor for trial types
             extraTargetTrials = [0 0 0 1 0 0 0 1];
             
-            
-            
-            
-            
+
             cBTargetPosition = counterBalancer(targetPosition, trialsPerRun);
             cBTargetChoice = counterBalancer(targetChoice, trialsPerRun); %just a variable for choosing if we use the first or second position if for example if it could appear in position 1 or 4
-            
-            
-            
-            
-            
-            
+         
             %deterimines which direction the t faces
             tDirection = [1, 1, 2, 2];
             tDirectionAllTrials = zeros(trialsPerRun, 4);
@@ -169,6 +161,7 @@ else
         % Add the subject struct to the main struct
         randomizor.(subStructName) = subjectStruct;
     end
+    save randomizor.mat randomizor
 end
 end
 
@@ -193,5 +186,4 @@ if mod(numTrials, 12) == 0
 else
     error('Input for numTrials must be divisiable by 12!')
 end
-save randomizor.mat randomizor
 end

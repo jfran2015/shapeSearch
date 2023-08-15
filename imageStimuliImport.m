@@ -1,4 +1,4 @@
-function[filePathMatrix, textureMatrix, imgMatrix] = imageStimuliImport(fileDirectory, fileType, w, sortLogical)
+function[filePathMatrix, textureMatrix] = imageStimuliImport(fileDirectory, fileType, w, sortLogical)
 %-------------------------------------------------------------------------
 % Script: detectKeyPressed.m
 % Author: Justin Frandsen
@@ -21,22 +21,17 @@ end
 myFiles = dir(fullfile(fileDirectory, fileType));
 filePathMatrix = string(zeros(length(myFiles), 1)); %matrix that contains all image file paths
 textureMatrix = zeros(length(myFiles), 1); %matrix that contains all the textures of the image files
-imgMatrix = zeros(length(myFiles), 1);
 for k = 1:length(myFiles)
     baseFileName = myFiles(k).name;
     fullFilePath = string(fullfile(fileDirectory, baseFileName));
-    
-    
-    
+
     if fileType == '*.png'
         [loadedImg, ~, alpha] = imread(fullFilePath);
         loadedImg(:, :, 4) = alpha;
     else
         loadedImg = imread(fullFilePath);
-        
-        
     end
-    imgMatrix(k)= loadedImg;
+    
     textureMatrix(k) = Screen('MakeTexture', w, loadedImg);
     filePathMatrix(k, 1) = fullFilePath;
 end
