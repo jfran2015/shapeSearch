@@ -93,12 +93,12 @@ DrawFormattedText(w, 'Loading Images...', 'center', 'center');
 Screen('Flip', w);
 
 % Load all .jpg files in the scenes folder.
-[allScenesFilePaths, allScenesTextures, sceneImgs] = imageStimuliImport(imageFolder, '*.jpg', w);
+[allScenesFilePaths, allScenesTextures] = imageStimuliImport(imageFolder, '*.jpg', w);
 
 % Load in shape stimuli
-[sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures, allShapesImgs] = imageStimuliImport(nonsidedShapes, '*.png', w, true);
-[sortedLeftShapesFilePaths, sortedLeftShapesTextures, leftShapesImgs] = imageStimuliImport(shapesTLeft, '*.png', w, true);
-[sortedRightShapesFilePaths, sortedRightShapesTextures, rigthShapesImgs] = imageStimuliImport(shapesTRight, '*.png', w, true);
+[sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = imageStimuliImport(nonsidedShapes, '*.png', w, true);
+[sortedLeftShapesFilePaths, sortedLeftShapesTextures] = imageStimuliImport(shapesTLeft, '*.png', w, true);
+[sortedRightShapesFilePaths, sortedRightShapesTextures] = imageStimuliImport(shapesTRight, '*.png', w, true);
 
 % =========================================================================
 % =============== Initialize the eyetracker! ==============================
@@ -186,6 +186,11 @@ shapePositions = load('shape_positions.mat');
 
 %load variables for where the shapes are located and what postion theyre in
 randomizor = fullRandomizor(trialsPerRun, allScenesTextures, sortedNonsidedShapesTextures, totalTargets);
+
+if isfield(randomizor, 'randomizor')
+    randomizor = randomizor.randomizor;
+end
+
 this_subj_this_run = randomizor.(sprintf('subj%d', subNum)).(sprintf('run%d', runNum)); %method of getting into the struct
 
 % =========================================================================
@@ -237,7 +242,14 @@ if dummymode==0 %if you are actually eye tracking (and not using mouse position,
     end
 end
 
-
+if dummymode == 0
+        Eyelink('Command', 'set_idle_mode'); %eye tracker will go idle and wait
+        WaitSecs(0.05);
+        
+        Eyelink('StartRecording'); % Start recording eye data
+        WaitSecs(0.1); % Allow a brief moment for the tracker to start recording
+end
+    
 if dummymode == 1 %if you are instead not measuring eye position and using the mouse like eye position (usually to test/debug a script)
     ShowCursor(['Arrow']); %show mouse position as an arrowhead (which you'll need to be able to see in order to simulate eye position by moving it with the mouse)
 end
@@ -280,16 +292,80 @@ for trialNum = 1:4 %trialsPerRun
     
     %================= Check for fixation on first cross! =================
     
-    if dummymode == 0
-        EyelinkDoDriftCorrection(el);
-        
-        Eyelink('Command', 'set_idle_mode'); %eye tracker will go idle and wait
-        WaitSecs(0.05);
-        
-        Eyelink('StartRecording'); % Start recording eye data
-        WaitSecs(0.1); % Allow a brief moment for the tracker to start recording
-    else
-        WaitSecs(0.5);
+    
+    ReadyToBegin = 0; %set this variable to zero to begin the trial, and it will need to turn to 1 when central fixation is acquired to proceed
+    
+    while ReadyToBegin == 0
+        if dummymode==0 %the following grabs the x and y position of the eye if tracking
+            
+            %if not recording (because the connection to the tracker
+            %was interrupted/broken), break out of the loop
+            error=Eyelink('CheckRecording');
+            if(error~=0)
+                break;
+            end
+            
+            if Eyelink('NewFloatSampleAvailable') > 0 %if a new read on eye position is avaialble
+                evt = Eyelink('NewestFloatSample'); %grab the new sample as a variable "evt" This is a structured variable with multiple parts
+                evt.gx; %this part of variable evt is the x-position of measured eye position (in pixels)
+                evt.gy; %this part of variable evt is the y-position of measured eye position (in pixels)
+                if eye_used ~= -1 %if you are actually measusing from the eye
+                    x = evt.gx(eye_used+1); %x will now be the measured eye position in the x-dimension
+                    y = evt.gy(eye_used+1); %y will now be the measured eye position in the y-dimension
+                    if x~=el.MISSING_DATA && y~=el.MISSING_DATA && evt.pa(eye_used+1)>0 %if eyes are not closed (otherwise measured eye position would not be a valid number, which would cause subsequent logical statements using the variable to fail)
+                        mx = x; %update variable mx to measured eye position in the x-dimension
+                        my = y; %update variable my to measured eye position in the y-dimension
+                    end
+                end
+            end
+        else
+            [mx, my]=GetMouse(w); %if using the mouse position to simulate eye position, define mx and my in terms of the position of the mouse cursor
+        end
+        % check if the position obtained is in the fixation window
+        fix = mx > winfix(1) &&  mx < winfix(3) && ...
+            my > winfix(2) && my < winfix(4); %this logical statement will be true (==1) if measured eye position (mx and my) are inside the box you defined around the fixation cross
+        if fix == 1 %if measured eye position (mx and my) is inside the central box around fixation
+            fixstart = GetSecs; %define the time that the fixation started
+            while fix == 1 %while eye position is still inside the central box (since you later update the variable within the while loop, it can become zero and not be true if eye position later falls outside of the central box)
+                %this next part here updates measured eye position as
+                %you did before you entered into this while loop. You
+                %will keep updating eye position until (a) the time in
+                %the box reaches a critical threshold or (b) eye
+                %position moves outside of the central box
+                if dummymode==0
+                    error=Eyelink('CheckRecording');
+                    if(error~=0)
+                        break;
+                    end
+                    
+                    if Eyelink('NewFloatSampleAvailable') > 0
+                        evt = Eyelink('NewestFloatSample');
+                        evt.gx;
+                        evt.gy;
+                        if eye_used ~= -1
+                            x = evt.gx(eye_used+1);
+                            y = evt.gy(eye_used+1);
+                            if x~=el.MISSING_DATA && y~=el.MISSING_DATA && evt.pa(eye_used+1)>0
+                                mx = x;
+                                my = y;
+                            end
+                        end
+                    end
+                else
+                    [mx, my]=GetMouse(w);
+                end
+                
+                fix = mx > winfix(1) &&  mx < winfix(3) && ...
+                    my > winfix(2) && my < winfix(4); %updates the fix variable that reflects whether measured eye position is inside the central box. If not, this now becomes 0 and will cause the while loop to end when it next loops around
+                fixduration = GetSecs - fixstart; %variable reflecting how long it has been since eye position was first measured inside the central fixation (current clock time minus the time at which eye position was first measured inside the central box) window
+                if fixduration >= 0.5 %if eye position has been inside the central fixation box for 0.5 seconds
+                    ReadyToBegin = 1; %fixation has been acquired and we're ready to move on and show the stimulus array
+                    break
+                end
+            end
+        elseif fix == 0
+            continue
+        end
     end
     
     Screen('Flip', w); %draws what the target fixation will be
@@ -371,15 +447,15 @@ for trialNum = 1:4 %trialsPerRun
     end
     
     
-    current_display = Screen('GetImage', w); %test if this sends the image I want to the eyetracker
-    
-    imwrite(current_display, 'FileName.png'); %consider including this script for later analysis of the images (I could also program up another script for saving the images quickly later if I want them)
-    
-    if dummymode == 0
-        transferStatus = Eyelink('ImageTransfer', 'FileName.png');
-        if transferStatus ~= 0
-            fprintf('*****Image transfer Failed*****-------\n');
-        end
+%     current_display = Screen('GetImage', w); %test if this sends the image I want to the eyetracker
+%     
+%     imwrite(current_display, 'FileName.png'); %consider including this script for later analysis of the images (I could also program up another script for saving the images quickly later if I want them)
+%     
+     if dummymode == 0
+%         transferStatus = Eyelink('ImageTransfer', 'FileName.png');
+%         if transferStatus ~= 0
+%             fprintf('*****Image transfer Failed*****-------\n');
+%         end
         
         % Send an integration message so that an image can be loaded as
         % overlay backgound when performing Data Viewer analysis.  This
@@ -387,7 +463,7 @@ for trialNum = 1:4 %trialsPerRun
         % after the 'TRIALID' message and before 'TRIAL_RESULT')
         % See "Protocol for EyeLink Data to Viewer Integration -> Image
         % Commands" section of the EyeLink Data Viewer User Manual.
-        Eyelink('Message', '!V IMGLOAD CENTER %s %d %d', 'FileName.png', width/2, height/2);
+        Eyelink('Message', 'Scene Presentation: %s', allScenesFilePaths(sceneInds));
         
     end
     
@@ -402,7 +478,11 @@ for trialNum = 1:4 %trialsPerRun
             if strcmp(responseKey, 'z') || strcmp(responseKey, '/?') %checks to see if the response key is z or /. If not it keeps looping
                 response = responseKey;
                 RT = round((secs - stimOnsetTime) * 1000);
-                Eyelink('Message', 'Key pressed');
+                
+                if dummymode == 0
+                    Eyelink('Message', 'Key pressed');
+                end
+                
                 break;
             end
         end
@@ -458,12 +538,8 @@ for trialNum = 1:4 %trialsPerRun
     if dummymode == 0
         Eyelink('Message', 'BLANK_SCREEN');
     end
-    
     % adds 100 msec of data to catch final events
     WaitSecs(0.1);
-    % stop the recording of eye-movements for the current trial
-    Eyelink('StopRecording');
-    WaitSecs(0.001);
     
     fileName{trialNum} = allScenesFilePaths(sceneInds);
     responses{trialNum} = response;
