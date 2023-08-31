@@ -121,7 +121,7 @@ else
             %tk I will need to go over this loop and make sure its
             %performing as I want
             allDistractorsAllTrials = [];
-            for k = 1:12 % 6 reps in the inner loop go into 72 (the random number I picked for number of trials to test these with, so 12 reps)
+            for k = 1:(trialsPerRun/6) % 6 reps in the inner loop go into 60 (the random number I picked for number of trials to test these with, so 10 reps)
                 tempDistractors = allDistractors;
                 
                 if exist('oneTrialDistractors','var')
@@ -137,6 +137,7 @@ else
                     allDistractorsAllTrials(end+1, :) = oneTrialDistractors;
                 end
             end
+            
             sceneOrder = allTrials(allTrialsStart:allTrialsEnd, 1);
             incorrectTargetLocation = allTrials(allTrialsStart:allTrialsEnd, 2);
             extraTargetTrials = allTrials(allTrialsStart:allTrialsEnd, 3);

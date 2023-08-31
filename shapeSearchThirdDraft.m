@@ -411,6 +411,7 @@ for trialNum = 1:4 %trialsPerRun
     end
     
     tDirection = tDirectionThisTrial(positionInds); %this variable is used to determine which direction the T faces
+    targetPositionInds = positionInds;
     shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, positionInds};
     if tDirection == 1 %if t direction is 1 the target
         Screen('DrawTexture', w, sortedRightShapesTextures(targetInds), [], shapeSizeAndPosition);
@@ -473,11 +474,10 @@ for trialNum = 1:4 %trialsPerRun
     startTime = GetSecs(); % Gets the time when this line was run
     
     fixationMatrix = [];  % Initialize an empty fixation matrix
-    fixationStartTime = 0; % Initialize the start time of the current fixation
-    isFixating = false;  % Initialize isFixating here
     previousFixationRect = 0; % Initialize the previously fixated rectangle
     currentFixationRect = 0; % Initialize the currently fixated rectangle
     fixationTimeThreshold = 100;
+    fixationStartTime = GetSecs(); %this will be used for the first fixation counter
     
     while GetSecs() - startTime <= 15 %15 represents seconds.
         [key_is_down, secs, key_code] = KbCheck;
@@ -519,47 +519,49 @@ for trialNum = 1:4 %trialsPerRun
         
         % Check if the current gaze position is within any of the interest areas
         
+        % Check if the current gaze position is within any of the interest areas
+        % Check if the current gaze position is within any of the interest areas
+        isInInterestArea = false;
         for interestArea = 1:4
             if IsInRect(mx, my, shapePositions.savedPositions{sceneInds, interestArea})
+                isInInterestArea = true;
                 currentFixationRect = interestArea;
                 break;  % Exit loop if a valid interest area is found
-            else
-                currentFixationRect = 0; % No interest area fixated
             end
         end
         
-        % Handle fixation state transitions
-        if currentFixationRect ~= previousFixationRect
-            if isFixating
+        if ~isInInterestArea
+            currentFixationRect = 0; % No interest area fixated
+        end
+        
+        % Check if fixation changed from the previous fixation
+        if previousFixationRect ~= currentFixationRect
+            if currentFixationRect ~= 0
+                fixationStartTime = GetSecs();
+            elseif previousFixationRect ~= 0
                 fixationEndTime = GetSecs();
-                fixationDuration = (fixationEndTime - fixationStartTime)*1000;
-                fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation];
-            end
-            
-            fixationStartTime = GetSecs();
-            isFixating = true;
-            previousFixationRect = currentFixationRect;
-        elseif isFixating
-            % Check if the fixation time in the current interest area is over
-            fixationEndTime = GetSecs();
-            fixationDuration = (fixationEndTime - fixationStartTime)*1000;
-            if fixationDuration >= fixationTimeThreshold
-                fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation];
-                isFixating = false;
+                fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
+                % Logging fixation data
+                fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
             end
         end
-        
+        previousFixationRect = currentFixationRect;
     end
     
-    % Outside the loop, handle the last fixation if it's ongoing
-    if isFixating
+    % Logging the last fixation if it's ongoing at the end of the loop
+    if previousFixationRect ~= 0
         fixationEndTime = GetSecs();
-        fixationDuration = (fixationEndTime - fixationStartTime)*1000;
-        fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation];
+        fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
+        % Logging last fixation data
+        fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
     end
     
-   
-    
+%     % Outside the loop, handle the last fixation if it's ongoing
+%     if previousFixationRect ~= 0
+%         fixationEndTime = GetSecs();
+%         fixationDuration = (fixationEndTime - fixationStartTime)*1000;
+%         fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+%     end
     
     if strcmp(response, 'nan')
         textToShow = 'Too slow!';
@@ -575,7 +577,7 @@ for trialNum = 1:4 %trialsPerRun
         accuracy(trialNum) = 0;
     end
     
-     %add accuracy to the fixation matrix at this point
+    %add accuracy to the fixation matrix at this point
     allTrialsFixationMatrix = [allTrialsFixationMatrix; fixationMatrix];
     
     DrawFormattedText(w, textToShow, 'center', 'center');
