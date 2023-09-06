@@ -1,4 +1,4 @@
-%function shapeSearch(subNum, runNum)
+%function shapeSearchThirdDraft(subNum, runNum)
 subNum = 55; %tk remove and uncomment function call
 runNum = 3; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
@@ -45,7 +45,7 @@ stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the 
 WinNum                  = 0;
 
 % Eyelink settings
-dummymode               = 1; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
+dummymode               = 1 ; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
 
 % =========================================================================
 % =============== Start of code! ==========================================
@@ -259,6 +259,7 @@ end
 
 possibleLocations = [1 2 3 4];
 allTargets = this_subj_this_run.allTargets;
+validKeys = {'z', '/?'};
 %targetLocationTypeRandomizor = this_subj_this_run.targetLocationTypeRandomizor;
 % =============== Task for loop ===========================================
 for trialNum = 1:4 %trialsPerRun
@@ -464,7 +465,7 @@ for trialNum = 1:4 %trialsPerRun
         % after the 'TRIALID' message and before 'TRIAL_RESULT')
         % See "Protocol for EyeLink Data to Viewer Integration -> Image
         % Commands" section of the EyeLink Data Viewer User Manual.
-        Eyelink('Message', 'Scene Presentation: %s', allScenesFilePaths(sceneInds));
+        Eyelink('Message', 'Scene Presentation:') %, allScenesFilePaths(sceneInds));
         
     end
     
@@ -483,7 +484,7 @@ for trialNum = 1:4 %trialsPerRun
         [key_is_down, secs, key_code] = KbCheck;
         if key_is_down
             responseKey = KbName(key_code);
-            if strcmp(responseKey, 'z') || strcmp(responseKey, '/?') %checks to see if the response key is z or /. If not it keeps looping
+            if ismember(responseKey, validKeys) %strcmp(responseKey, 'z') || strcmp(responseKey, '/?') %checks to see if the response key is z or /. If not it keeps looping
                 response = responseKey;
                 RT = round((secs - stimOnsetTime) * 1000);
                 
@@ -498,6 +499,7 @@ for trialNum = 1:4 %trialsPerRun
         if dummymode==0
             error=Eyelink('CheckRecording');
             if(error~=0)
+                fprintf('Eyelink error: %d\n', error);
                 break;
             end
             if Eyelink('NewFloatSampleAvailable') > 0
@@ -542,7 +544,9 @@ for trialNum = 1:4 %trialsPerRun
                 fixationEndTime = GetSecs();
                 fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
                 % Logging fixation data
-                fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+                if fixationDuration > 50
+                    fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+                end
             end
         end
         previousFixationRect = currentFixationRect;
@@ -553,15 +557,10 @@ for trialNum = 1:4 %trialsPerRun
         fixationEndTime = GetSecs();
         fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
         % Logging last fixation data
-        fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+        if fixationDuration > 50
+            fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+        end
     end
-    
-%     % Outside the loop, handle the last fixation if it's ongoing
-%     if previousFixationRect ~= 0
-%         fixationEndTime = GetSecs();
-%         fixationDuration = (fixationEndTime - fixationStartTime)*1000;
-%         fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
-%     end
     
     if strcmp(response, 'nan')
         textToShow = 'Too slow!';
@@ -645,12 +644,13 @@ for col = 1:4 %trialsPerRun
 end
 
 % Convert cell to a table and use first row as variable names
-% outputTable = cell2table(outputData(2:end,:), 'VariableNames', outputData(1,:));
+outputTable = cell2table(outputData(2:end,:), 'VariableNames', outputData(1,:));
 
 % Write the table to a CSV file
 % Output is working but it is commeted out for now so I don't have a bunch
 % saved csv files that I have to go and delete
 % writetable(outputTable, fullfile(bxOutputFolder, bxFileName));
+% csvwrite('myFile.txt',M) use this to save the file output
+% save('Filename.mat')
 
 pfp_ptb_cleanup
-%end
