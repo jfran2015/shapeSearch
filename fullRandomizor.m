@@ -1,9 +1,12 @@
 function randomizor = fullRandomizor(trialsPerRun, sceneTextures, shapeTextures, totalTargets)
 
-
+% Check if a pre-generated randomizor file exists
 if exist('randomizor.mat', 'file')
+    % Load the existing randomizor data if the file exists
     randomizor = load('randomizor.mat');
 else
+    % If the randomizor file doesn't exist, generate new data
+    
     % Initialize the main struct to hold 100 sub-structs (subjects)
     randomizor = struct();
     
@@ -12,28 +15,37 @@ else
     % Number of runs
     totalRuns = 6;
     
+    % Loop through each subject
     for subject = 1:totalSubj
         subStructName = sprintf('subj%d', subject);
         
         % Create the subject struct
         subjectStruct = struct();
         
+        % Define trial conditions
         sceneInds = [1:96]';
         incorrectTrials = [0 0 0 1 0 0 0 1]';
         extraTargetTrials = [1 0 1 1 0 1 0 0]';
         
+        % Combine trial conditions
         combinedTrialConditions = [incorrectTrials, extraTargetTrials];
         
-        
+        % Initialize an array to store all experimental conditions for all
+        % trials
         allTrials = [];
+        
+        % Loop through 4 repitions of all trials (This is because each
+        % scene will be shown 4 times)
         for i = 1:4
             allConditions = [];
-            if i == 1
-                numberOfRepitions = (length(sceneInds)/length(incorrectTrials))-(32/length(combinedTrialConditions));
-                allConditions = zeros(32, 2);
-            else
-                numberOfRepitions = length(sceneInds)/length(incorrectTrials);
-            end
+%             if i == 1
+%                 
+%                 % Calculate the number of repetitions needed i
+%                 numberOfRepitions = (length(sceneInds)/length(incorrectTrials))-(32/length(combinedTrialConditions));
+%                 allConditions = zeros(32, 2);
+%             else
+            numberOfRepitions = length(sceneInds)/length(incorrectTrials);
+%             end
             
             for reps = 1:numberOfRepitions
                 rowInds = randperm(length(combinedTrialConditions));

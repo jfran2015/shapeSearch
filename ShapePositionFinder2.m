@@ -97,10 +97,9 @@ while scene_num <= length(scenes_texture_matrix)
             position = textureSize * scaler + textureMover;
             Screen('DrawTexture', w, scenes_texture_matrix(scene_num), [], rect);
             Screen('DrawTexture', w, this_shape, [], position);
-            Screen('Flip', w);
-            
-            
+            Screen('Flip', w);   
         end
+        
         savedPositions{scene_num, i} = position;
         DrawFormattedText(w, '1 = Wall, 2 = Floor, 3 = Counter', 'center', 'center')
         Screen('Flip', w);
