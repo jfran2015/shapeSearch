@@ -45,7 +45,7 @@ for thisSceneNum = 1:numScenes
                     
                     totalMatchesCounter = totalMatchesCounter +1;
                     if primarySceneType ~= secondarySceneType
-                        %fprintf("Primary Scene: %d, Position: %d, Type: %d\nSecondary Scene: %d Position: %d, Type: %d\n",thisSceneNum, k, primarySceneType,sceneNum, i, secondarySceneType)
+                        fprintf("Primary Scene(%d, %d), Type: %d -- SecondaryScene(%d, %d) Type: %d\n",thisSceneNum, k, primarySceneType,sceneNum, i, secondarySceneType)
                         differentTypeMatchesCounter = differentTypeMatchesCounter+1;
                         
                         if primarySceneType == 1 && secondarySceneType == 3 || primarySceneType == 3 && secondarySceneType == 1

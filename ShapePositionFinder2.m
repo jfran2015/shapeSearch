@@ -1,6 +1,6 @@
 function ShapePositionFinder2()
 %-----------------------------------------------------------------------
-% Script: ShapePositionFinder.m
+% Script: ShapePositionFinder2.m
 % Author: Justin Frandsen
 % Date: 07/21/2023
 % Description:
@@ -15,6 +15,11 @@ function ShapePositionFinder2()
 %   the location and size of each object. Each row represents each scene.
 % - A second .mat file will be saved containing the responses to if the
 %   shape was on the floor, counter, or wall.
+% - This script adds the ability to go between scenes. I am unsure if
+%   implimentation of this script will occur yet because I don't think the
+%   position number will change when scene changes creating weird effects.
+%   (i.e., I got back a scene when looking at scene 12 position 3 it would
+%   go back to scene 11 position 3.)
 %-----------------------------------------------------------------------
 
 % settings

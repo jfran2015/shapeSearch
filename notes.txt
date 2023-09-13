@@ -21,7 +21,10 @@ scenes\pexels-pixabay-279648.jpg
 
 To do:
 - Make sure scenes can't appear back to back
-- Look into sending the eyetracker the image(scene with shapes) that is presented to the participant
-- Make sure all variables are being saved in the table. I am unsure if shape, shape_position, or shape location type are being saved.
-- Add functionality to check if objects are overlapping, and if they are highlight when they are different possion types (floor and counter)
-- Add fixation matrix (4 rows each col represents the duration of each fixation on each shape). 
+- Make sure all variables are being saved in the table. I am unsure if shape, shape_position, or shape location type are being saved. 
+
+- Meeting 9/11/2023: Finnish creating practice part on experiment. 
+- Verify that trials work as intended.
+- Video trials to check if its working as attended
+- Get correct images for study.
+- Fix locations and make sure shapes are not right by fixation cross.
