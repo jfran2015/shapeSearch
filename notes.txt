@@ -1,30 +1,10 @@
-Scenes to remove:
-scenes\075_L_filler_absent_light.jpg
-scenes\077_L_filler_absent_footrest.jpg
-scenes\079_L_filler_absent_bowl.jpg
-scenes\pexels-christa-grover-2001944.jpg
-scenes\pexels-curtis-adams-10099319.jpg
-scenes\pexels-curtis-adams-14495889.jpg
-scenes\pexels-curtis-adams-15062155.jpg
-scenes\pexels-curtis-adams-3958951.jpg
-scenes\pexels-curtis-adams-5353881.jpg
-scenes\pexels-curtis-adams-5502249.jpg
-scenes\pexels-curtis-adams-5698015.jpg
-scenes\pexels-curtis-adams-6510985.jpg
-scenes\pexels-curtis-adams-8186506.jpg
-scenes\pexels-curtis-adams-8583543.jpg
-scenes\pexels-curtis-adams-8583892.jpg
-scenes\pexels-hakim-santoso-3634740.jpg
-scenes\pexels-keegan-checks-10117737.jpg
-scenes\pexels-max-rahubovskiy-6969860.jpg
-scenes\pexels-pixabay-279648.jpg
+- To do:
+    - Make sure scenes can't appear back to back %idk if im gonna fix this lol
+    - Make sure all variables are being saved in the table. I have added and fixed this some, but more time needs spend verifying. 
 
-To do:
-- Make sure scenes can't appear back to back
-- Make sure all variables are being saved in the table. I am unsure if shape, shape_position, or shape location type are being saved. 
-
-- Meeting 9/11/2023: Finnish creating practice part on experiment. 
-- Verify that trials work as intended.
-- Video trials to check if its working as attended
-- Get correct images for study.
-- Fix locations and make sure shapes are not right by fixation cross.
+- Meeting 9/11/2023: 
+    - Finnish creating practice part on experiment. 
+    - Verify that trials work as intended.
+    - Video trials to check if its working as attended
+    - Get correct images for study.
+    - Fix locations and make sure shapes are not right by fixation cross.

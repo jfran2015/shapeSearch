@@ -30,16 +30,16 @@ bxFileFormat            = 'sceneShapeSearchSub%.3dRun%.2d.csv';
 eyeFileFormat           = 'S%.3dR%.1d.edf';
 bxOutputFolder          = 'output/bxData';
 eyetrackingOutputFolder = 'output/eyeData';
-imageFolder             = 'scenes';
-nonsidedShapes          = 'Stimuli/transparent_black';
-shapesTLeft             = 'Stimuli/Black_Left_T';
-shapesTRight            = 'Stimuli/Black_Right_T';
+sceneFolderMain         = 'Stimuli/scenes/mainScenes';
+sceneFolderPractice     = 'Stimuli/scenes/practiceScenes';
+nonsidedShapes          = 'shapes/transparent_black';
+shapesTLeft             = 'shapes/Black_Left_T';
+shapesTRight            = 'shapes/Black_Right_T';
 
 % Task variables
 trialsPerRun            = 60;% must be a multiple of 4
 totalTargets            = 4;
 totalDistractors        = 18;
-totalScenes             = 96;
 stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
 
 % PTB Settings
@@ -96,7 +96,13 @@ DrawFormattedText(w, 'Loading Images...', 'center', 'center');
 Screen('Flip', w);
 
 % Load all .jpg files in the scenes folder.
-[allScenesFilePaths, allScenesTextures] = imageStimuliImport(imageFolder, '*.jpg', w);
+if runNum == 1
+    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderPractice, '*.jpg', w);
+else
+    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderMain, '*.jpg', w);
+end
+
+totalScenes = length(allScenesFilePaths);
 
 % Load in shape stimuli
 [sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = imageStimuliImport(nonsidedShapes, '*.png', w, true);
@@ -183,8 +189,13 @@ if dummymode == 0
 end
 
 %load
-shapeLocationTypes = load('shape_location_types.mat');
-shapePositions = load('shape_positions.mat');
+if runNum == 1
+    shapeLocationTypes = load('shape_location_types_practice.mat');
+    shapePositions = load('shape_positions_practice.mat');
+elseif runNum > 1
+    shapeLocationTypes = load('shape_location_types_main.mat');
+    shapePositions = load('shape_positions_main.mat');
+end
 
 %load variables for where the shapes are located and what postion theyre in
 randomizor = fullRandomizor(trialsPerRun, totalScenes, sortedNonsidedShapesTextures, totalTargets);

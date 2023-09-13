@@ -1,4 +1,4 @@
-function ShapePositionFinder()
+function shapePositionFinder(sceneTypeMain0Practice1)
 %-----------------------------------------------------------------------
 % Script: ShapePositionFinder.m
 % Author: Justin Frandsen
@@ -18,8 +18,9 @@ function ShapePositionFinder()
 %-----------------------------------------------------------------------
 
 % settings
-image_folder = 'scenes';
-stimuli_folder = 'Stimuli/transparent_black';
+sceneFolderPractice = 'Stimuli/scenes/practiceScenes';
+scenesFolderMain = 'Stimuli/scenes/mainScenes';
+shapesFolder = 'stimuli/shapes/transparent_black';
 
 % Initilize PTB window
 [w, rect] = pfp_ptb_init;
@@ -28,10 +29,16 @@ stimuli_folder = 'Stimuli/transparent_black';
 Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA'); %allows the .png files to be transparent
 
 %load all .jpg files in the images directory.
-[scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(image_folder, '*.jpg', w);
+if sceneTypeMain0Practice1 == 0
+    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(scenesFolderMain, '*.jpg', w);
+elseif sceneTypeMain0Practice1 == 1
+    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(sceneFolderPractice, '*.jpg', w);
+else
+    error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
+end
 
 %load in stimuli
-[~, stimuli_texture_matrix] = imageStimuliImport(stimuli_folder, '*.png', w);
+[~, stimuli_texture_matrix] = imageStimuliImport(shapesFolder, '*.png', w);
 
 % Set initial position of the texture
 textureSize = [0, 0, 240, 240]; % Adjust the size of the texture as desired
@@ -124,6 +131,13 @@ locationTypes = cell2mat(locationTypes);
 
 pfp_ptb_cleanup;
 
-save shape_positions.mat savedPositions
-save shape_location_types.mat locationTypes
+if sceneTypeMain0Practice1 == 0
+    save shape_positions_main.mat savedPositions
+    save shape_location_types_main.mat locationTypes
+elseif sceneTypeMain0Practice1 == 1
+    save shape_positions_practice.mat savedPositions
+    save shape_location_types_practice.mat locationTypes
+else
+    error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
+end
 end
