@@ -3,9 +3,9 @@ function randomizor = fullRandomizor(trialsPerRun, totalScenes, shapeTextures, t
 origionalTrialsPerRun = trialsPerRun;
 
 % Check if a pre-generated randomizor file exists
-if exist('randomizor.mat', 'file')
+if exist('trialDataFiles/randomizor.mat', 'file')
     % Load the existing randomizor data if the file exists
-    randomizor = load('randomizor.mat');
+    randomizor = load('trialDataFiles/randomizor.mat');
 else
     % If the randomizor file doesn't exist, generate new data
     
@@ -176,7 +176,7 @@ else
         randomizor.(subStructName) = subjectStruct;
         
     end
-    save randomizor.mat randomizor
+    save trialDataFiles/randomizor.mat randomizor
 end
 end
 

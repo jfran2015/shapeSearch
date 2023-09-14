@@ -17,7 +17,9 @@ runNum = 3; %tk remove and uncomment function call
 % Usage:
 % - type function name with subject number and run number (seperated by a
 %   comma in parentheses).(e.g., shapeSearch(222, 1)).
-% - Script will output a .csv file containing behavioral data, a .mat file
+% - Script will output a .csv file containing behavioral data, a .csv file
+%   containing fixation data, a .mat file containing all variables in the
+%   matlab enviroment, and a .edf file for usage with eyelink data viewer.
 %   containing all matlab script variables, and a .edf file containing
 %   eyetracking data.
 %-----------------------------------------------------------------------
@@ -37,13 +39,13 @@ shapesTLeft             = 'shapes/Black_Left_T';
 shapesTRight            = 'shapes/Black_Right_T';
 
 % Task variables
-trialsPerRun            = 60;% must be a multiple of 4
+trialsPerRun            = 60;% must be a multiple of 4 (ive tried changing this and it has been resulting in some strange behavior in the full randomizor script. I'll wait to see how long the experiment is before deciding either way.
 totalTargets            = 4;
 totalDistractors        = 18;
 stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
 
 % PTB Settings
-WinNum                  = 0;
+% WinNum                  = 0; % 0 means only one monitor. 
 
 % Eyelink settings
 dummymode               = 1 ; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
@@ -190,11 +192,11 @@ end
 
 %load
 if runNum == 1
-    shapeLocationTypes = load('shape_location_types_practice.mat');
-    shapePositions = load('shape_positions_practice.mat');
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice.mat');
+    shapePositions = load('trialDataFiles/shape_positions_practice.mat');
 elseif runNum > 1
-    shapeLocationTypes = load('shape_location_types_main.mat');
-    shapePositions = load('shape_positions_main.mat');
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
+    shapePositions = load('trialDataFiles/shape_positions_main.mat');
 end
 
 %load variables for where the shapes are located and what postion theyre in

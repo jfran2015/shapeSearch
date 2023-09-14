@@ -132,11 +132,11 @@ locationTypes = cell2mat(locationTypes);
 pfp_ptb_cleanup;
 
 if sceneTypeMain0Practice1 == 0
-    save shape_positions_main.mat savedPositions
-    save shape_location_types_main.mat locationTypes
+    save trialDataFiles/shape_positions_main.mat savedPositions
+    save trialDataFiles/shape_location_types_main.mat locationTypes
 elseif sceneTypeMain0Practice1 == 1
-    save shape_positions_practice.mat savedPositions
-    save shape_location_types_practice.mat locationTypes
+    save trialDataFiles/shape_positions_practice.mat savedPositions
+    save trialDataFiles/shape_location_types_practice.mat locationTypes
 else
     error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
 end
