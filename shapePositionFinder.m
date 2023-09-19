@@ -30,9 +30,9 @@ Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA'); %allows th
 
 %load all .jpg files in the images directory.
 if sceneTypeMain0Practice1 == 0
-    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(scenesFolderMain, '*.jpg', w);
+    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(scenesFolderMain, '', w);
 elseif sceneTypeMain0Practice1 == 1
-    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(sceneFolderPractice, '*.jpg', w);
+    [scenes_file_path_matrix, scenes_texture_matrix] = imageStimuliImport(sceneFolderPractice, '', w);
 else
     error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
 end

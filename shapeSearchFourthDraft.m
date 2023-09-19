@@ -1,6 +1,6 @@
-%function shapeSearchFourthDraft(subNum, runNum)
-subNum = 55; %tk remove and uncomment function call
-runNum = 3; %tk remove and uncomment function call
+function shapeSearchFourthDraft(subNum, runNum)
+% subNum = 1; %tk remove and uncomment function call
+% runNum = 1; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -34,18 +34,23 @@ bxOutputFolder          = 'output/bxData';
 eyetrackingOutputFolder = 'output/eyeData';
 sceneFolderMain         = 'Stimuli/scenes/mainScenes';
 sceneFolderPractice     = 'Stimuli/scenes/practiceScenes';
-nonsidedShapes          = 'shapes/transparent_black';
-shapesTLeft             = 'shapes/Black_Left_T';
-shapesTRight            = 'shapes/Black_Right_T';
+nonsidedShapes          = 'Stimuli/shapes/transparent_black';
+shapesTLeft             = 'Stimuli/shapes/Black_Left_T';
+shapesTRight            = 'Stimuli/shapes/Black_Right_T';
 
 % Task variables
-trialsPerRun            = 60;% must be a multiple of 4 (ive tried changing this and it has been resulting in some strange behavior in the full randomizor script. I'll wait to see how long the experiment is before deciding either way.
+if runNum > 1
+    trialsPerRun        = 60;% must be a multiple of 4 (ive tried changing this and it has been resulting in some strange behavior in the full randomizor script. I'll wait to see how long the experiment is before deciding either way.
+elseif runNum == 1
+    trialsPerRun        = 24;
+end
+
 totalTargets            = 4;
 totalDistractors        = 18;
 stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
 
 % PTB Settings
-% WinNum                  = 0; % 0 means only one monitor. 
+WinNum                  = 0; % 0 means only one monitor. 
 
 % Eyelink settings
 dummymode               = 1 ; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
@@ -99,9 +104,9 @@ Screen('Flip', w);
 
 % Load all .jpg files in the scenes folder.
 if runNum == 1
-    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderPractice, '*.jpg', w);
+    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderPractice, '', w);
 else
-    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderMain, '*.jpg', w);
+    [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderMain, '', w);
 end
 
 totalScenes = length(allScenesFilePaths);
@@ -200,7 +205,10 @@ elseif runNum > 1
 end
 
 %load variables for where the shapes are located and what postion theyre in
-randomizor = fullRandomizor(trialsPerRun, totalScenes, sortedNonsidedShapesTextures, totalTargets);
+%randomizor = fullRandomizor(trialsPerRun, totalScenes,
+%sortedNonsidedShapesTextures, totalTargets); this line is uncommented out
+%when you want randomizor to be created.
+randomizor = load('trialDataFiles/randomizor.mat');
 
 if isfield(randomizor, 'randomizor')
     randomizor = randomizor.randomizor;
@@ -252,9 +260,7 @@ if dummymode==0 %if you are actually eye tracking (and not using mouse position,
     Eyelink('Command', 'driftcorrect_cr_disable = OFF'); %allow online drift correction on tracker computer
     Eyelink('Command', 'normal_click_dcorr = ON'); %use the normal click method to activate and apply drift correction
     Eyelink('Command', 'online_dcorr_maxangle = 5.0'); %only allow drift correction when the different between measured and corrected eye position is 5 degrees visual angle or less
-    
-    % tk I just changed this. I'm hoping this displays the fixation point
-    % on the screen but I'm not sure how it will work later on with the image sent to the eyetracker
+   
     Eyelink('command', 'clear_screen %d', 0);
     Eyelink('command', 'draw_box %d %d %d %d 15', winfix(1),winfix(2),winfix(3),winfix(4));
     
@@ -282,7 +288,7 @@ allTargets = this_subj_this_run.allTargets;
 validKeys = {'z', '/?'};
 %targetLocationTypeRandomizor = this_subj_this_run.targetLocationTypeRandomizor;
 % =============== Task for loop ===========================================
-for trialNum = 1:4 %trialsPerRun tk
+for trialNum = 1:trialsPerRun 
     if dummymode==0
         error=Eyelink('checkrecording');
         if(error~=0)
@@ -314,7 +320,7 @@ for trialNum = 1:4 %trialsPerRun tk
     
     Screen('Flip', w); %draws fixation cross 1
     
-    Screen('DrawTexture', w, sortedNonsidedShapesTextures(targetInds)); %tk change the size later to reflect the true size on the trial
+    Screen('DrawTexture', w, sortedNonsidedShapesTextures(targetInds));
     
     %================= Check for fixation on first cross! =================
     
@@ -667,7 +673,7 @@ end
 
 outputData = {'sub_num' 'run_num' 'file_name' 'trial_num'  'rt' 'response' 't_direction' 'accuracy' 'target_position' 'target_location_type' 'target_number' 'trialTypeValid0Invalid1' 'trialTypeExtraTarget1NoExtraTarget0';};
 
-for col = 1:4 %trialsPerRun tk
+for col = 1:trialsPerRun
     outputData{col+1, 1} = subNumForOutput(1, col);
     outputData{col+1, 2} = runNumForOutput(1, col);
     outputData{col+1, 3} = fileName(1, col);
@@ -710,3 +716,5 @@ matlabDataName = fullfile('output/matlabData', matlabDataName);
 save(matlabDataName)
 
 pfp_ptb_cleanup
+
+end

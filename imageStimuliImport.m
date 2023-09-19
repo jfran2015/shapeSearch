@@ -1,6 +1,6 @@
 function[filePathMatrix, textureMatrix] = imageStimuliImport(fileDirectory, fileType, PTBwindow, sortLogical)
 %-------------------------------------------------------------------------
-% Script: detectKeyPressed.m
+% Script: imageStimuliImport.m
 % Author: Justin Frandsen
 % Date: 07/20/2023
 % Description: Matlab Script that is used for importing image files and
@@ -22,21 +22,34 @@ if nargin < 4
     sortLogical = false;
 end
 
-myFiles = dir(fullfile(fileDirectory, fileType));
+if isempty(fileType)
+    % The inputVariable is empty.
+    myFiles = dir(fullfile(fileDirectory));
+    % Exclude '.' (current directory) and '..' (parent directory)
+    myFiles = myFiles(~ismember({myFiles.name}, {'.', '..'}));
+elseif fileType == '*.png'
+    % The inputVariable is not empty.
+    % Proceed with your function logic.
+    myFiles = dir(fullfile(fileDirectory, '*.png'));
+end
+
 filePathMatrix = string(zeros(length(myFiles), 1)); %matrix that contains all image file paths
 textureMatrix = zeros(length(myFiles), 1); %matrix that contains all the textures of the image files
+
 for k = 1:length(myFiles)
     baseFileName = myFiles(k).name;
     fullFilePath = string(fullfile(fileDirectory, baseFileName));
     
     %this if differs for .png files because png files have the ability to
     %be transparent, so they need the alpha variable.
-    if fileType == '*.png'
+   
+    if strcmp(fileType, '*.png')
         [loadedImg, ~, alpha] = imread(fullFilePath);
         loadedImg(:, :, 4) = alpha;
     else
         loadedImg = imread(fullFilePath);
     end
+    
     
     textureMatrix(k) = Screen('MakeTexture', PTBwindow, loadedImg);
     filePathMatrix(k, 1) = fullFilePath;

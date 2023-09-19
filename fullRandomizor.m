@@ -12,7 +12,7 @@ else
     % Initialize the main struct to hold 100 sub-structs (subjects)
     randomizor = struct();
     
-    totalSubj = 100;
+    totalSubj = 500;
     
     % Number of runs
     totalRuns = 7;
