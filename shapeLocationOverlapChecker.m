@@ -11,8 +11,8 @@
 % - 
 %-----------------------------------------------------------------------
 
-shapeLocationTypes = load('shape_location_types.mat');
-shapePositions = load('shape_positions.mat');
+shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
+shapePositions = load('trialDataFiles/shape_positions_main.mat');
 
 savedPositions = shapePositions.savedPositions;
 numScenes = length(savedPositions);
@@ -70,7 +70,7 @@ for thisSceneNum = 1:numScenes
 end
 
 fprintf("Scenes Positions w/ different matches = %d/%d\n", totalDifferentMatchedScenes, numScenes*4)
-fprintf("Floor with Wall Match Count = %d\n", floorWithWall/2) %devide by 2 because it checks each position twice
+fprintf("Floor with Wall Match Count = %d\n", floorWithWall/2) %divide by 2 because it checks each position twice
 fprintf("Floor with Counter Match Count = %d\n", floorWithCounter/2) 
 fprintf("Counter with Wall Match Count = %d\n", counterWithWall/2)
 

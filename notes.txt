@@ -8,3 +8,6 @@
     - Video trials to check if its working as attended
     - Get correct images for study.
     - Fix locations and make sure shapes are not right by fixation cross.
+
+-9/19/2023
+    - Impliment system in 
