@@ -50,9 +50,12 @@ y = 0;
 savedPositions = cell(4, 4); %tk change first for to length(scenes_texture_matrix)
 locationTypes = cell(4, 4); %tk first 4 to length(scenes_texture_matrix)
 
+mistakes = [];
+mistakeCounter = 0;
+
 %loop for presenting scenes and their
 for scene_num = 1:length(scenes_texture_matrix)
-    for i = 1:4
+    for positionNum = 1:4
         WaitSecs(0.5);
         running = true;
         this_shape = stimuli_texture_matrix(randsample(1:22, 1));
@@ -86,6 +89,18 @@ for scene_num = 1:length(scenes_texture_matrix)
                 end
             elseif keyIsDown && keyCode(KbName('o'))
                 disp(scenes_file_path_matrix(scene_num))
+            elseif keyIsDown && keyCode(KbName('m'))
+                if positionNum > 1
+                    positionNumForDisplay = positionNum-1;
+                    sceneNumForDisplay = scene_num;
+                elseif positionNum == 1
+                    positionNumForDisplay = 4;
+                    sceneNumForDisplay = scene_num - 1;
+                end
+                fprintf("ScenePosition(%d, %d)", sceneNumForDisplay, positionNumForDisplay)
+                mistakeCounter = mistakeCounter + 1;
+                mistakes(mistakeCounter, 1) = sceneNumForDisplay;
+                mistakes(mistakeCounter, 2) = positionNumForDisplay;
             elseif keyIsDown && keyCode(KbName('ESCAPE'))
                 pfp_ptb_cleanup
             end
@@ -98,7 +113,7 @@ for scene_num = 1:length(scenes_texture_matrix)
             
             
         end
-        savedPositions{scene_num, i} = position;
+        savedPositions{scene_num, positionNum} = position;
         DrawFormattedText(w, '1 = Wall, 2 = Floor, 3 = Counter', 'center', 'center')
         Screen('Flip', w);
         while true
@@ -108,7 +123,7 @@ for scene_num = 1:length(scenes_texture_matrix)
             
             % Check if the response is valid (1, 2, or 3)
             if any(strcmp(keyChar, {'1!', '2@', '3#'}))
-                locationTypes{scene_num, i} = keyChar;
+                locationTypes{scene_num, positionNum} = keyChar;
                 break; % Break out of the response loop
             end
         end
@@ -134,9 +149,11 @@ pfp_ptb_cleanup;
 if sceneTypeMain0Practice1 == 0
     save trialDataFiles/shape_positions_main.mat savedPositions
     save trialDataFiles/shape_location_types_main.mat locationTypes
+    save trialDataFiles/mistakes_main.mat mistakes
 elseif sceneTypeMain0Practice1 == 1
     save trialDataFiles/shape_positions_practice.mat savedPositions
     save trialDataFiles/shape_location_types_practice.mat locationTypes
+    save trialDataFiles/mistakes_practice.mat mistakes
 else
     error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
 end
