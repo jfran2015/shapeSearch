@@ -10,7 +10,6 @@
 % -
 % -
 %-----------------------------------------------------------------------
-
 sceneTypeMain0Practice1 = 0;
 
 % settings
@@ -37,6 +36,9 @@ elseif sceneTypeMain0Practice1 == 1
 else
     error('Input for sceneTypeMain0Practice1 must be either 1 or 0!')
 end
+
+locationTypes = shapeLocationTypes.locationTypes;
+savedPositions = shapePositions.savedPositions;
 
 % Set initial position of the texture
 textureSize = [0, 0, 240, 240]; % Adjust the size of the texture as desired
@@ -75,19 +77,6 @@ for scene_num = 1:length(scenes_texture_matrix)
         Screen('DrawText', w, textForDisplay)
         Screen('Flip', w);
         
-        %this look waits until the spacebar is pressed to continue
-        start = 0;
-        while start==0
-            [key_time,key_code]=KbWait([], 2);
-            resp = find(key_code);
-            if resp(1) == KbName('SPACE') || resp(1) == KbName('space')
-                start = 1;
-            end
-        end
-        
-        DrawFormattedText(w, 'Was this posisition Correct: Y/N?', 'center', 'center')
-        Screen('Flip', w);
-        
         while true
             % Wait for a response
             [~, keyCode, ~] = KbWait([], 2);
@@ -104,7 +93,6 @@ for scene_num = 1:length(scenes_texture_matrix)
                         while running == true
                             % Check for keyboard events
                             [keyIsDown, ~, keyCode] = KbCheck;
-                            
                             if keyIsDown && keyCode(KbName('space'))
                                 running = false; % Break the loop if spacebar is pressed
                             elseif keyIsDown && keyCode(KbName('w'))
@@ -151,9 +139,7 @@ for scene_num = 1:length(scenes_texture_matrix)
                             position = textureSize * scaler + textureMover;
                             Screen('DrawTexture', w, scenes_texture_matrix(scene_num), [], rect);
                             Screen('DrawTexture', w, this_shape, [], position);
-                            Screen('Flip', w);
-                            
-                            
+                            Screen('Flip', w);   
                         end
                         savedPositions{scene_num, positionNum} = position;
                         DrawFormattedText(w, '1 = Wall, 2 = Floor, 3 = Counter', 'center', 'center')
@@ -165,7 +151,7 @@ for scene_num = 1:length(scenes_texture_matrix)
                             
                             % Check if the response is valid (1, 2, or 3)
                             if any(strcmp(keyChar, {'1!', '2@', '3#'}))
-                                locationTypes{scene_num, positionNum} = keyChar;
+                                locationTypes(scene_num, positionNum) = keyChar;
                                 break; % Break out of the response loop
                             end
                         end
