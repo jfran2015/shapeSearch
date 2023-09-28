@@ -1,6 +1,6 @@
-function shapeSearchFourthDraft(subNum, runNum)
-% subNum = 1; %tk remove and uncomment function call
-% runNum = 1; %tk remove and uncomment function call
+%function shapeSearchFourthDraft(subNum, runNum)
+subNum = 22; %tk remove and uncomment function call
+runNum = 4; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -68,7 +68,7 @@ bxOutputFileList = dir(fullfile(bxOutputFolder, '*.csv'));
 for j = 1:length(bxOutputFileList)
     existing_file_name = bxOutputFileList(j).name;
     if existing_file_name == bxFileName
-        error('Suject bx file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        eyelinkError('Suject bx file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
     end
 end
 
@@ -77,7 +77,7 @@ eyeOutputFileList = dir(fullfile(eyetrackingOutputFolder, '*.csv'));
 for j = 1:length(eyeOutputFileList)
     existing_file_name = eyeOutputFileList(j).name;
     if existing_file_name == bxFileName
-        error('Suject eyetracking file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        eyelinkError('Suject eyetracking file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
     end
 end
 
@@ -290,8 +290,8 @@ validKeys = {'z', '/?'};
 % =============== Task for loop ===========================================
 for trialNum = 1:trialsPerRun 
     if dummymode==0
-        error=Eyelink('checkrecording');
-        if(error~=0)
+        eyelinkError=Eyelink('checkrecording');
+        if(eyelinkError~=0)
             break;
         end
         % Send trial identification message to Eyelink
@@ -332,8 +332,8 @@ for trialNum = 1:trialsPerRun
             
             %if not recording (because the connection to the tracker
             %was interrupted/broken), break out of the loop
-            error=Eyelink('CheckRecording');
-            if(error~=0)
+            eyelinkError=Eyelink('CheckRecording');
+            if(eyelinkError~=0)
                 break;
             end
             
@@ -365,8 +365,8 @@ for trialNum = 1:trialsPerRun
                 %the box reaches a critical threshold or (b) eye
                 %position moves outside of the central box
                 if dummymode==0
-                    error=Eyelink('CheckRecording');
-                    if(error~=0)
+                    eyelinkError=Eyelink('CheckRecording');
+                    if(eyelinkError~=0)
                         break;
                     end
                     
@@ -536,9 +536,9 @@ for trialNum = 1:trialsPerRun
         end
         
         if dummymode==0
-            error=Eyelink('CheckRecording');
-            if(error~=0)
-                fprintf('Eyelink error: %d\n', error);
+            eyelinkError=Eyelink('CheckRecording');
+            if(eyelinkError~=0)
+                fprintf('Eyelink error: %d\n', eyelinkError);
                 break;
             end
             if Eyelink('NewFloatSampleAvailable') > 0
@@ -717,4 +717,4 @@ save(matlabDataName)
 
 pfp_ptb_cleanup
 
-end
+%end
