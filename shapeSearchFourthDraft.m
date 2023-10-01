@@ -445,17 +445,17 @@ for trialNum = 1:trialsPerRun
     
     tDirection = tDirectionThisTrial(positionInds); %this variable is used to determine which direction the T faces
     targetPositionInds = positionInds;
-    shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, positionInds};
+    targetShapeSizeAndPosition = shapePositions.savedPositions{sceneInds, targetPositionInds};
     
     %save target position to variable for output
-    targetLocationPosition{trialNum} = shapeSizeAndPosition;
-    targetLocationType(trialNum) = shapeLocationTypes.locationTypes(trialNum, targetPositionInds);
+    targetLocationPosition{trialNum} = targetShapeSizeAndPosition;
+    targetLocationType(trialNum) = shapeLocationTypes.locationTypes(sceneInds, targetPositionInds);
     
     if tDirection == 1 %if t direction is 1 the target
-        Screen('DrawTexture', w, sortedRightShapesTextures(targetInds), [], shapeSizeAndPosition);
+        Screen('DrawTexture', w, sortedRightShapesTextures(targetInds), [], targetShapeSizeAndPosition);
         tDirectionTarget{trialNum} = 'R'; %this variable is used to output which direction the T faced
     elseif tDirection == 2
-        Screen('DrawTexture', w, sortedLeftShapesTextures(targetInds), [], shapeSizeAndPosition);
+        Screen('DrawTexture', w, sortedLeftShapesTextures(targetInds), [], targetShapeSizeAndPosition);
         tDirectionTarget{trialNum} = 'L'; %this variable is used to output which direction the T faced
     end
     
@@ -472,12 +472,12 @@ for trialNum = 1:trialsPerRun
     distractorPositions = setdiff(possibleLocations, positionInds);
     for position = 1:length(distractorPositions)
         distractorTDirection = tDirectionThisTrial(distractorPositions(position));
-        shapeSizeAndPosition = shapePositions.savedPositions{sceneInds, distractorPositions(position)};
+        distractorShapeSizeAndPosition = shapePositions.savedPositions{sceneInds, distractorPositions(position)};
         thisDistractor = thisTrialDistractors(position);
         if distractorTDirection == 1
-            Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], shapeSizeAndPosition);
+            Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], distractorShapeSizeAndPosition);
         elseif distractorTDirection == 2
-            Screen('DrawTexture', w, sortedLeftShapesTextures(thisDistractor), [], shapeSizeAndPosition);
+            Screen('DrawTexture', w, sortedLeftShapesTextures(thisDistractor), [], distractorShapeSizeAndPosition);
         end
     end
     
