@@ -1,18 +1,31 @@
-%function shapeLocationOverlapChecker()
+function shapeLocationOverlapChecker(sceneTypeMain0Practice1, unchecked0checked1)
 %-----------------------------------------------------------------------
 % Script: shapeLocationOverlapChecker.m
 % Author: Justin Frandsen
-% Date: 09/06/2023
+% Date: 10/02/2023
 % Description:
-% - 
+% - This script takes the output of shapePositionFinder.m and checks what
+%   locations are overlaping.
 % Usage:
-% - 
-% - 
-% - 
+% - For main scenes use sceneTypeMain0Practice1 = 0 and for practice scenes
+%   use sceneTypeMain0Practice1 = 1. 
+% - To use output from shapePositionChecker.m instead use
+%   unchecked0checked1 = 1
 %-----------------------------------------------------------------------
 
-shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
-shapePositions = load('trialDataFiles/shape_positions_main.mat');
+if sceneTypeMain0Practice1 == 0 && unchecked0checked1 == 0
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
+    shapePositions = load('trialDataFiles/shape_positions_main.mat');
+elseif sceneTypeMain0Practice1 == 1 && unchecked0checked1 == 0
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice.mat');
+    shapePositions = load('trialDataFiles/shape_positions_practice.mat');
+elseif sceneTypeMain0Practice1 == 0 && unchecked0checked1 == 1
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_main_checked.mat');
+    shapePositions = load('trialDataFiles/shape_positions_main_checked.mat');
+elseif sceneTypeMain0Practice1 == 1 && unchecked0checked1 == 1
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice_checked.mat');
+    shapePositions = load('trialDataFiles/shape_positions_practice_checked.mat');
+end
 
 savedPositions = shapePositions.savedPositions;
 numScenes = length(savedPositions);
@@ -73,6 +86,8 @@ fprintf("Scenes Positions w/ different matches = %d/%d\n", totalDifferentMatched
 fprintf("Floor with Wall Match Count = %d\n", floorWithWall/2) %divide by 2 because it checks each position twice
 fprintf("Floor with Counter Match Count = %d\n", floorWithCounter/2) 
 fprintf("Counter with Wall Match Count = %d\n", counterWithWall/2)
+
+end
 
 function overlap = rectOverlap(rect1, rect2)
     x1 = rect1(1);

@@ -1,5 +1,17 @@
 function randomizor = fullRandomizor(trialsPerRun, totalScenes, shapeTextures, totalTargets)
 
+%-----------------------------------------------------------------------
+% Script: fullRandomizor.m
+% Author: Justin Frandsen
+% Date: 09/06/2023
+% Description:
+% - This script is used for creating the main struct used to randomize the
+%   trial order for the experiment
+% Usage:
+% - Input trial variables in the script. If the randomizor matrix has
+%   already been created it just loads it in.
+%-----------------------------------------------------------------------
+
 origionalTrialsPerRun = trialsPerRun;
 
 % Check if a pre-generated randomizor file exists

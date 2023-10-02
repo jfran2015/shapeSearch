@@ -1,6 +1,6 @@
-%function shapeSearchFourthDraft(subNum, runNum)
-subNum = 22; %tk remove and uncomment function call
-runNum = 2; %tk remove and uncomment function call
+function shapeSearchFourthDraft(subNum, runNum)
+%subNum = 22; %tk remove and uncomment function call
+%runNum = 2; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -68,7 +68,7 @@ bxOutputFileList = dir(fullfile(bxOutputFolder, '*.csv'));
 for j = 1:length(bxOutputFileList)
     existing_file_name = bxOutputFileList(j).name;
     if existing_file_name == bxFileName
-        eyelinkError('Suject bx file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        error('Suject bx file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
     end
 end
 
@@ -77,7 +77,7 @@ eyeOutputFileList = dir(fullfile(eyetrackingOutputFolder, '*.csv'));
 for j = 1:length(eyeOutputFileList)
     existing_file_name = eyeOutputFileList(j).name;
     if existing_file_name == bxFileName
-        eyelinkError('Suject eyetracking file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        error('Suject eyetracking file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
     end
 end
 

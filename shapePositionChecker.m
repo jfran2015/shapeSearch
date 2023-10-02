@@ -1,14 +1,14 @@
-%function shapePositionChecker(sceneTypeMain0Practice1)
+function shapePositionChecker(sceneTypeMain0Practice1)
 %-----------------------------------------------------------------------
 % Script: ShapePositionChecker.m
 % Author: Justin Frandsen
-% Date: 09/26/2023
+% Date: 10/02/2023
 % Description:
-% -
+% - Takes output from shapePositionFinder.m and lets you Fix any
+%   mislabeling or mistakes in positioning
 % Usage:
-% -
-% -
-% -
+% - sceneTypeMain0Practice1 is used to determine if you are going to check
+%   over the scenes for the practice trials or the main trials
 %-----------------------------------------------------------------------
 sceneTypeMain0Practice1 = 1;
 
@@ -22,6 +22,10 @@ shapesFolder = 'stimuli/shapes/transparent_black';
 [width, height] = Screen('WindowSize', 0);
 
 Screen('BlendFunction', w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA'); %allows the .png files to be transparent
+
+% Load in images
+DrawFormattedText(w, 'Loading Images...', 'center', 'center');
+Screen('Flip', w);
 
 if sceneTypeMain0Practice1 == 0
     shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
