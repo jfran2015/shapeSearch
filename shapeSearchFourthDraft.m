@@ -1,6 +1,6 @@
 %function shapeSearchFourthDraft(subNum, runNum)
 subNum = 22; %tk remove and uncomment function call
-runNum = 4; %tk remove and uncomment function call
+runNum = 2; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -105,7 +105,7 @@ Screen('Flip', w);
 % Load all .jpg files in the scenes folder.
 if runNum == 1
     [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderPractice, '', w);
-else
+elseif runNum > 1
     [allScenesFilePaths, allScenesTextures] = imageStimuliImport(sceneFolderMain, '', w);
 end
 
@@ -197,18 +197,16 @@ end
 
 %load
 if runNum == 1
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice.mat');
-    shapePositions = load('trialDataFiles/shape_positions_practice.mat');
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice1.mat');
+    shapePositions = load('trialDataFiles/shape_positions_practice1.mat');
 elseif runNum > 1
     shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
     shapePositions = load('trialDataFiles/shape_positions_main.mat');
 end
 
 %load variables for where the shapes are located and what postion theyre in
-%randomizor = fullRandomizor(trialsPerRun, totalScenes,
-%sortedNonsidedShapesTextures, totalTargets); this line is uncommented out
-%when you want randomizor to be created.
-randomizor = load('trialDataFiles/randomizor.mat');
+randomizor = fullRandomizor(trialsPerRun, totalScenes, sortedNonsidedShapesTextures, totalTargets); % this line is uncommented out when you want randomizor to be created.
+%randomizor = load('trialDataFiles/randomizor.mat');
 
 if isfield(randomizor, 'randomizor')
     randomizor = randomizor.randomizor;
