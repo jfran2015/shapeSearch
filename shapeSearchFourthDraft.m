@@ -1,6 +1,6 @@
-function shapeSearchFourthDraft(subNum, runNum)
-%subNum = 22; %tk remove and uncomment function call
-%runNum = 2; %tk remove and uncomment function call
+%function shapeSearchFourthDraft(subNum, runNum)
+subNum = 4; %tk remove and uncomment function call
+runNum = 2; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -53,7 +53,7 @@ stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the 
 WinNum                  = 0; % 0 means only one monitor. 
 
 % Eyelink settings
-dummymode               = 1 ; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
+dummymode               = 0 ; %set 0 if using eyetracking, set 1 if not eyetracking (will use mouse position instead)
 
 % =========================================================================
 % =============== Start of code! ==========================================
@@ -197,11 +197,11 @@ end
 
 %load
 if runNum == 1
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice1.mat');
-    shapePositions = load('trialDataFiles/shape_positions_practice1.mat');
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice_checked.mat');
+    shapePositions = load('trialDataFiles/shape_positions_practice_checked.mat');
 elseif runNum > 1
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
-    shapePositions = load('trialDataFiles/shape_positions_main.mat');
+    shapeLocationTypes = load('trialDataFiles/shape_location_types_main_checked.mat');
+    shapePositions = load('trialDataFiles/shape_positions_main_checked.mat');
 end
 
 %load variables for where the shapes are located and what postion theyre in
@@ -236,6 +236,9 @@ allTrialsFixationMatrix = [];
 
 % Create a cell array to store eye movement data for each trial
 eyeMovementData = cell(1, trialsPerRun);
+
+mx = 1;
+my = 1;
 
 %-------------------Instructions----------------------------------------
 DrawFormattedText(w, 'For a <sideways T with bar on left> press z\n and for a <sideways T with bar on right> press /', 'center', 'center')
@@ -352,8 +355,7 @@ for trialNum = 1:trialsPerRun
             [mx, my]=GetMouse(w); %if using the mouse position to simulate eye position, define mx and my in terms of the position of the mouse cursor
         end
         % check if the position obtained is in the fixation window
-        fix = mx > winfix(1) &&  mx < winfix(3) && ...
-            my > winfix(2) && my < winfix(4); %this logical statement will be true (==1) if measured eye position (mx and my) are inside the box you defined around the fixation cross
+        fix = mx > winfix(1) &&  mx < winfix(3) && my > winfix(2) && my < winfix(4); %this logical statement will be true (==1) if measured eye position (mx and my) are inside the box you defined around the fixation cross
         if fix == 1 %if measured eye position (mx and my) is inside the central box around fixation
             fixstart = GetSecs; %define the time that the fixation started
             while fix == 1 %while eye position is still inside the central box (since you later update the variable within the while loop, it can become zero and not be true if eye position later falls outside of the central box)

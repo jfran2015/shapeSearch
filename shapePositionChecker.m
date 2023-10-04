@@ -10,7 +10,6 @@ function shapePositionChecker(sceneTypeMain0Practice1)
 % - sceneTypeMain0Practice1 is used to determine if you are going to check
 %   over the scenes for the practice trials or the main trials
 %-----------------------------------------------------------------------
-sceneTypeMain0Practice1 = 1;
 
 % settings
 sceneFolderPractice = 'Stimuli/scenes/practiceScenes';
@@ -164,3 +163,4 @@ else
 end
 
 pfp_ptb_cleanup
+end

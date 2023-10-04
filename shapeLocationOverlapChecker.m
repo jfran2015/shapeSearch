@@ -87,6 +87,13 @@ fprintf("Floor with Wall Match Count = %d\n", floorWithWall/2) %divide by 2 beca
 fprintf("Floor with Counter Match Count = %d\n", floorWithCounter/2) 
 fprintf("Counter with Wall Match Count = %d\n", counterWithWall/2)
 
+for sceneNum = 1:numScenes
+    if sum(find(shapeLocationTypes.locationTypes(2, :) == 1)) >= 1 && sum(find(shapeLocationTypes.locationTypes(2, :) == 2)) >= 1 && sum(find(shapeLocationTypes.locationTypes(2, :) == 3)) >= 1
+        fprintf("SceneNum: %d, is good\n", sceneNum);
+    else
+        fprintf("SceneNum: %d, is bad\n", sceneNum);
+    end
+end
 end
 
 function overlap = rectOverlap(rect1, rect2)
