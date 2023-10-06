@@ -1,6 +1,6 @@
-%function shapeSearchFourthDraft(subNum, runNum)
-subNum = 4; %tk remove and uncomment function call
-runNum = 2; %tk remove and uncomment function call
+function shapeSearchFourthDraft(subNum, runNum)
+%subNum = 4; %tk remove and uncomment function call
+%runNum = 2; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -11,7 +11,7 @@ runNum = 2; %tk remove and uncomment function call
 % Additional Comments:
 % - Must be in the correct folder to run script.
 % - Make sure eyetracker is powered on and connected.
-% - Make sure shape_location_type.mat & shape_position.mat are saved and
+% - Make sure shape_location_type_checked.mat & shape_position_checked.mat are saved and
 %   ready
 %
 % Usage:
@@ -37,6 +37,7 @@ sceneFolderPractice     = 'Stimuli/scenes/practiceScenes';
 nonsidedShapes          = 'Stimuli/shapes/transparent_black';
 shapesTLeft             = 'Stimuli/shapes/Black_Left_T';
 shapesTRight            = 'Stimuli/shapes/Black_Right_T';
+instructionShapes       = 'Stimuli/shapes/instructions';
 
 % Task variables
 if runNum > 1
@@ -46,8 +47,6 @@ elseif runNum == 1
 end
 
 totalTargets            = 4;
-totalDistractors        = 18;
-stimuliSizeRect         = [0, 0, 240, 240]; %This rect contains the size of the shapes that are presented
 
 % PTB Settings
 WinNum                  = 0; % 0 means only one monitor. 
@@ -115,6 +114,9 @@ totalScenes = length(allScenesFilePaths);
 [sortedNonsidedShapesFilePaths, sortedNonsidedShapesTextures] = imageStimuliImport(nonsidedShapes, '*.png', w, true);
 [sortedLeftShapesFilePaths, sortedLeftShapesTextures] = imageStimuliImport(shapesTLeft, '*.png', w, true);
 [sortedRightShapesFilePaths, sortedRightShapesTextures] = imageStimuliImport(shapesTRight, '*.png', w, true);
+
+%load in shapes for instructions
+[sortedInstructionShapesFilePaths, sortedInstructionShapesTextures] = imageStimuliImport(instructionShapes, '*.png', w, true);
 
 % =========================================================================
 % =============== Initialize the eyetracker! ==============================
@@ -206,7 +208,6 @@ end
 
 %load variables for where the shapes are located and what postion theyre in
 randomizor = fullRandomizor(trialsPerRun, totalScenes, sortedNonsidedShapesTextures, totalTargets); % this line is uncommented out when you want randomizor to be created.
-%randomizor = load('trialDataFiles/randomizor.mat');
 
 if isfield(randomizor, 'randomizor')
     randomizor = randomizor.randomizor;
@@ -241,7 +242,15 @@ mx = 1;
 my = 1;
 
 %-------------------Instructions----------------------------------------
-DrawFormattedText(w, 'For a <sideways T with bar on left> press z\n and for a <sideways T with bar on right> press /', 'center', 'center')
+InstructionText = ['Each trial you will be required to look directly at a ' ...
+    'central fixation cross. Once fixated, you will be presented a shape ' ...
+    'that you will be required to search for in a following scene. ' ...
+    'A second fixation cross will appear, and then a scene will be presented. ' ...
+    'Each scene will appear with four shapes in it. You will be required to ' ...
+    'find the shape presented to you previously. Each shape will appear with ' ...
+    'a sideways T in it. While the shapes are still on the screen you will ' ...
+    'report if the T appears with the top on the left or top on the right.'];
+DrawFormattedText(w, InstructionText, 'center', 'center')
 Screen('Flip', w);
 
 %this look waits until the spacebar is pressed to continue
@@ -584,7 +593,9 @@ for trialNum = 1:trialsPerRun
                 fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
                 % Logging fixation data
                 if fixationDuration > 50
-                    fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+                    fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect,...
+                        trialNum,hisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
+                        targetInds, targetPositionInds];
                 end
             end
         end
@@ -597,7 +608,9 @@ for trialNum = 1:trialsPerRun
         fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
         % Logging last fixation data
         if fixationDuration > 50
-            fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect, trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, targetInds, targetPositionInds];
+            fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect,...
+                trialNum,hisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
+                targetInds, targetPositionInds];        
         end
     end
     

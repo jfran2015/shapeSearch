@@ -1,23 +1,23 @@
 library(tidyverse)
 getwd()
 
-sceneShapeSearchSub055Run03 <- read.csv("../output/bxData/sceneShapeSearchSub055Run03.csv")
+#sceneShapeSearchSub055Run03 <- read.csv("../output/bxData/sceneShapeSearchSub003Run02.csv")
+
+bx_files <- dir(path = "../output/bxData/", full.names = TRUE)
+eye_files <- dir(path = "../output/eyeData/fixationData", full.names = TRUE)
 
 #function that passes files from 
-read <- function(data){
+read <- function(data_folder){
   full <- 0
-  for (file in data) {
-    #get condition of either organized or cluttered
-    condition = str_sub(file,-8, -8)
-    #get subject number
-    subn = str_sub(file,-6, -5)
+  for (file in data_folder) {
     #read in data
-    individual <- read.table(file = file)
-    #create new variables
-    individual$condition <- condition
-    individual$subn <- subn
+    individual <- read.csv(file = file)
     full <- rbind(full, individual)
   }
-  fixed <- full[-c(1),]
+  fixed <- full[-1,]
   return(fixed)
 }
+
+all_bx_files <- read(bx_files)
+all_fixation_files <- read(eye_files)
+
