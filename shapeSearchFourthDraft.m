@@ -234,6 +234,9 @@ targetLocationPosition = cell(1, trialsPerRun);
 targetNumber = zeros(1, trialsPerRun);
 trialTypeValid0Invalid1 = zeros(1, trialsPerRun);
 trialTypeExtraTarget1NoExtraTarget0 = zeros(1, trialsPerRun);
+extraTargetShapeNumber = zeros(1, trialsPerRun);
+extraTargetShapePosition = zeros(1, trialsPerRun);
+extraTargetShapeType = zeros(1, trialsPerRun);
 
 
 allTrialsFixationMatrix = [];
@@ -509,6 +512,9 @@ for trialNum = 1:trialsPerRun
         possibleDistractorTargets = setdiff(allTargets(1, :), targetInds);
         distractorTarget = possibleDistractorTargets(extraTargetInd);
         thisTrialDistractors(trialInd) = distractorTarget;
+
+        %save info about the distractor target
+        extraTargetShapeNumber(trialNum) = distractorTarget;
     end
     
     trialTypeExtraTarget1NoExtraTarget0(trialNum) = thisTrialExtraTarget;
@@ -519,6 +525,15 @@ for trialNum = 1:trialsPerRun
         distractorTDirection = tDirectionThisTrial(distractorPositions(position));
         distractorShapeSizeAndPosition = shapePositions.savedPositions{sceneInds, distractorPositions(position)};
         thisDistractor = thisTrialDistractors(position);
+        
+        %tk verify that this saves right.
+        if thisTrialExtraTarget == 1
+            if distractorTarget == thisDistractor
+                extraTargetShapePosition(trialNum) = distractorPositions(position);
+                extraTargetShapeType(trialNum) = shapeLocationTypes.locationTypes(sceneInds, distractorPositions(position));
+            end
+        end
+
         if distractorTDirection == 1
             Screen('DrawTexture', w, sortedRightShapesTextures(thisDistractor), [], distractorShapeSizeAndPosition);
         elseif distractorTDirection == 2
@@ -697,7 +712,10 @@ if dummymode==0
     Eyelink('Shutdown'); %shutdown Matlab connection to EyeLink
 end
 
-outputData = {'sub_num' 'run_num' 'file_name' 'trial_num'  'rt' 'response' 't_direction' 'accuracy' 'target_position' 'target_location_type' 'target_number' 'trialTypeValid0Invalid1' 'trialTypeExtraTarget1NoExtraTarget0';};
+outputData = {'sub_num' 'run_num' 'file_name' 'trial_num'  'rt' 'response'...
+    't_direction' 'accuracy' 'target_position' 'target_location_type' 'target_number'...
+    'trialTypeValid0Invalid1' 'trialTypeExtraTarget1NoExtraTarget0' 'extraTargetShapeNumber'...
+    'extraTargetShapePosition' 'extraTargetShapeType';};
 
 for col = 1:trialsPerRun
     outputData{col+1, 1} = subNumForOutput(1, col);
@@ -713,6 +731,9 @@ for col = 1:trialsPerRun
     outputData{col+1, 11} = targetNumber(1, col);
     outputData{col+1, 12} = trialTypeValid0Invalid1(1, col);
     outputData{col+1, 13} = trialTypeExtraTarget1NoExtraTarget0(1, col);
+    outputData{col+1, 14} = extraTargetShapeNumber(1, col);
+    outputData{col+1, 15} = extraTargetShapePosition(1, col);
+    outputData{col+1, 16} = extraTargetShapeType(1, col);
 end
 
 % Convert cell to a table and use first row as variable names
