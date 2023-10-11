@@ -1,6 +1,6 @@
 function shapeSearchFourthDraft(subNum, runNum)
-%subNum = 4; %tk remove and uncomment function call
-%runNum = 2; %tk remove and uncomment function call
+%subNum = 50; %tk remove and uncomment function call
+%runNum = 1; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
@@ -67,7 +67,8 @@ bxOutputFileList = dir(fullfile(bxOutputFolder, '*.csv'));
 for j = 1:length(bxOutputFileList)
     existing_file_name = bxOutputFileList(j).name;
     if existing_file_name == bxFileName
-        error('Suject bx file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        error(['Suject bx file already exists. If you want to run again with the same subject ' ...
+            'number you will need to delete the corresponding output file.']);
     end
 end
 
@@ -76,7 +77,8 @@ eyeOutputFileList = dir(fullfile(eyetrackingOutputFolder, '*.csv'));
 for j = 1:length(eyeOutputFileList)
     existing_file_name = eyeOutputFileList(j).name;
     if existing_file_name == bxFileName
-        error('Suject eyetracking file already exists. If you want to run again with the same subject number you will need to delete the corresponding output file.');
+        error(['Suject eyetracking file already exists. If you want to run again ' ...
+            'with the same subject number you will need to delete the corresponding output file.']);
     end
 end
 
@@ -207,7 +209,7 @@ elseif runNum > 1
 end
 
 %load variables for where the shapes are located and what postion theyre in
-randomizor = fullRandomizor(trialsPerRun, totalScenes, sortedNonsidedShapesTextures, totalTargets); % this line is uncommented out when you want randomizor to be created.
+randomizor = fullRandomizor(trialsPerRun, 96, sortedNonsidedShapesTextures, totalTargets); % this line is uncommented out when you want randomizor to be created.
 
 if isfield(randomizor, 'randomizor')
     randomizor = randomizor.randomizor;
@@ -233,35 +235,72 @@ targetNumber = zeros(1, trialsPerRun);
 trialTypeValid0Invalid1 = zeros(1, trialsPerRun);
 trialTypeExtraTarget1NoExtraTarget0 = zeros(1, trialsPerRun);
 
+
 allTrialsFixationMatrix = [];
 
-% Create a cell array to store eye movement data for each trial
-eyeMovementData = cell(1, trialsPerRun);
-
+%set these variables to 1 only because sometimes the eyetracker would not
+%get a new sample this would cause these variables to not be set causing an
+%error sometimes on the first trial.
 mx = 1;
 my = 1;
 
 %-------------------Instructions----------------------------------------
-InstructionText = ['Each trial you will be required to look directly at a ' ...
-    'central fixation cross. Once fixated, you will be presented a shape ' ...
-    'that you will be required to search for in a following scene. ' ...
-    'A second fixation cross will appear, and then a scene will be presented. ' ...
-    'Each scene will appear with four shapes in it. You will be required to ' ...
-    'find the shape presented to you previously. Each shape will appear with ' ...
-    'a sideways T in it. While the shapes are still on the screen you will ' ...
-    'report if the T appears with the top on the left or top on the right.'];
-DrawFormattedText(w, InstructionText, 'center', 'center')
-Screen('Flip', w);
+% Define your instruction text as an array of strings, splitting it into parts.
+instructionText = {
+    'In this experiment, each trial you will be presented a target shape. You ',
+    'will be asked to search for this shape in a following scene. All shapes ', 
+    'will appear with a sideways T in them. Each scene will have multiple ',
+    'shapes in it, but you will be asked to only report the direction of the ', 
+    'T in the target shape.', 
+    'If the target shape appears with the T in this orientation press /',
+    '',
+    '',
+    '',
+    '',
+    'If the target shape appears with the T in this orientation press z'
+    '',
+    '',
+    '',
+    '',
+};
 
-%this look waits until the spacebar is pressed to continue
-start = 0;
-while start==0
-    [key_time,key_code]=KbWait([], 2);
-    resp = find(key_code);
-    if resp(1) == KbName('SPACE') || resp(1) == KbName('space')
-        start = 1;
+% Initialize variables for text display.
+instructionTextStart = 1;
+instructionTextEnd = 1;
+textChunkSize = 5;  % Number of lines to display at a time.
+
+leftMargin = 450;
+presCount = 1;
+
+% Loop to display text in chunks.
+while instructionTextStart <= numel(instructionText)
+    % Determine the end of the text chunk.
+    instructionTextEnd = instructionTextStart + textChunkSize - 1;
+    if instructionTextEnd > numel(instructionText)
+        instructionTextEnd = numel(instructionText);
     end
+    
+   
+    
+    % Display the current chunk of text.
+    DrawFormattedText(w, strjoin(instructionText(instructionTextStart:instructionTextEnd), '\n'), leftMargin, 'center');
+    
+    if presCount == 2
+        Screen('DrawTexture', w, sortedInstructionShapesTextures(1), [], [910, 490, 1010, 590]);
+    elseif presCount == 3
+        Screen('DrawTexture', w, sortedInstructionShapesTextures(2), [], [910, 490, 1010, 590]);
+    end
+    
+    Screen('Flip', w);
+    
+    presCount = presCount+1;
+    % Wait for a key press (spacebar) to continue.
+    KbWait([], 2);
+    
+    % Update the starting point for the next chunk.
+    instructionTextStart = instructionTextEnd + 1;
 end
+
 
 if dummymode==0 %if you are actually eye tracking (and not using mouse position, which you might do if just testing the script)
     Eyelink('Command', 'set_idle_mode'); %eye tracker will go idle and wait
@@ -287,11 +326,10 @@ if dummymode == 0
     
     Eyelink('StartRecording'); % Start recording eye data
     WaitSecs(0.1); % Allow a brief moment for the tracker to start recording
+elseif dummymode == 1 %if you are instead not measuring eye position and using the mouse like eye position (usually to test/debug a script)
+    ShowCursor(['Arrow']); %show mouse position as an arrowhead for eyetracking simulation
 end
 
-if dummymode == 1 %if you are instead not measuring eye position and using the mouse like eye position (usually to test/debug a script)
-    ShowCursor(['Arrow']); %show mouse position as an arrowhead (which you'll need to be able to see in order to simulate eye position by moving it with the mouse)
-end
 
 possibleLocations = [1 2 3 4];
 allTargets = this_subj_this_run.allTargets;
@@ -364,15 +402,12 @@ for trialNum = 1:trialsPerRun
             [mx, my]=GetMouse(w); %if using the mouse position to simulate eye position, define mx and my in terms of the position of the mouse cursor
         end
         % check if the position obtained is in the fixation window
-        fix = mx > winfix(1) &&  mx < winfix(3) && my > winfix(2) && my < winfix(4); %this logical statement will be true (==1) if measured eye position (mx and my) are inside the box you defined around the fixation cross
+        % this logical statement will be true (==1) if measured eye position (mx and my) 
+        % are inside the box you defined around the fixation cross
+        fix = mx > winfix(1) &&  mx < winfix(3) && my > winfix(2) && my < winfix(4); 
         if fix == 1 %if measured eye position (mx and my) is inside the central box around fixation
             fixstart = GetSecs; %define the time that the fixation started
-            while fix == 1 %while eye position is still inside the central box (since you later update the variable within the while loop, it can become zero and not be true if eye position later falls outside of the central box)
-                %this next part here updates measured eye position as
-                %you did before you entered into this while loop. You
-                %will keep updating eye position until (a) the time in
-                %the box reaches a critical threshold or (b) eye
-                %position moves outside of the central box
+            while fix == 1 %while eye position is still inside the central box
                 if dummymode==0
                     eyelinkError=Eyelink('CheckRecording');
                     if(eyelinkError~=0)
@@ -426,7 +461,7 @@ for trialNum = 1:trialsPerRun
     
     % Draw background scene
     Screen('DrawTexture', w, allScenesTextures(sceneInds), [], rect); %cue scene to be flipped
-    WaitSecs(1); %keep fixation cross on screen for 0.5 sec
+    WaitSecs(1); %keep fixation cross on screen for 1 sec
     
     %this gives back the indicies that match the targetPosition
     allPositionInds = find(shapeLocationTypes.locationTypes(sceneInds, :) == targetPosition);
@@ -470,13 +505,14 @@ for trialNum = 1:trialsPerRun
     
     if thisTrialExtraTarget == 1
         trialInd = randsample(1:3, 1);
-        targetInd = randsample(1:3, 1);
+        extraTargetInd = randsample(1:3, 1);
         possibleDistractorTargets = setdiff(allTargets(1, :), targetInds);
-        distractorTarget = possibleDistractorTargets(targetInd);
+        distractorTarget = possibleDistractorTargets(extraTargetInd);
         thisTrialDistractors(trialInd) = distractorTarget;
     end
     
     trialTypeExtraTarget1NoExtraTarget0(trialNum) = thisTrialExtraTarget;
+
     
     distractorPositions = setdiff(possibleLocations, positionInds);
     for position = 1:length(distractorPositions)
@@ -494,27 +530,7 @@ for trialNum = 1:trialsPerRun
     
     if dummymode == 0
         Eyelink('Message', 'SYNCTIME');
-    end
-    
-    
-    %     current_display = Screen('GetImage', w); %test if this sends the image I want to the eyetracker
-    %
-    %     imwrite(current_display, 'FileName.png'); %consider including this script for later analysis of the images (I could also program up another script for saving the images quickly later if I want them)
-    %
-    if dummymode == 0
-        %         transferStatus = Eyelink('ImageTransfer', 'FileName.png');
-        %         if transferStatus ~= 0
-        %             fprintf('*****Image transfer Failed*****-------\n');
-        %         end
-        
-        % Send an integration message so that an image can be loaded as
-        % overlay backgound when performing Data Viewer analysis.  This
-        % message can be placed anywhere within the scope of a trial (i.e.,
-        % after the 'TRIALID' message and before 'TRIAL_RESULT')
-        % See "Protocol for EyeLink Data to Viewer Integration -> Image
-        % Commands" section of the EyeLink Data Viewer User Manual.
-        Eyelink('Message', 'Scene Presentation:') %, allScenesFilePaths(sceneInds));
-        
+        Eyelink('Message', 'Scene Presentation:')  
     end
     
     %response
@@ -525,14 +541,14 @@ for trialNum = 1:trialsPerRun
     fixationMatrix = [];  % Initialize an empty fixation matrix
     previousFixationRect = 0; % Initialize the previously fixated rectangle
     currentFixationRect = 0; % Initialize the currently fixated rectangle
-    fixationTimeThreshold = 100;
+    fixationTimeThreshold = 50;
     fixationStartTime = GetSecs(); %this will be used for the first fixation counter
     
     while GetSecs() - startTime <= 15 %15 represents seconds.
         [key_is_down, secs, key_code] = KbCheck;
         if key_is_down
             responseKey = KbName(key_code);
-            if ismember(responseKey, validKeys) %strcmp(responseKey, 'z') || strcmp(responseKey, '/?') %checks to see if the response key is z or /. If not it keeps looping
+            if ismember(responseKey, validKeys) %checks to see if the response key is z or /. If not it keeps looping
                 response = responseKey;
                 RT = round((secs - stimOnsetTime) * 1000);
                 
@@ -568,9 +584,6 @@ for trialNum = 1:trialsPerRun
         end
         
         % Check if the current gaze position is within any of the interest areas
-        
-        % Check if the current gaze position is within any of the interest areas
-        % Check if the current gaze position is within any of the interest areas
         isInInterestArea = false;
         for interestArea = 1:4
             if IsInRect(mx, my, shapePositions.savedPositions{sceneInds, interestArea})
@@ -592,9 +605,9 @@ for trialNum = 1:trialsPerRun
                 fixationEndTime = GetSecs();
                 fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
                 % Logging fixation data
-                if fixationDuration > 50
+                if fixationDuration > fixationTimeThreshold
                     fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect,...
-                        trialNum,hisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
+                        trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
                         targetInds, targetPositionInds];
                 end
             end
@@ -607,9 +620,9 @@ for trialNum = 1:trialsPerRun
         fixationEndTime = GetSecs();
         fixationDuration = (fixationEndTime - fixationStartTime) * 1000;
         % Logging last fixation data
-        if fixationDuration > 50
+        if fixationDuration > fixationTimeThreshold
             fixationMatrix = [fixationMatrix; fixationDuration, previousFixationRect,...
-                trialNum,hisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
+                trialNum, thisTrialExtraTarget, thisTrialIncorrectTargetLocation, ...
                 targetInds, targetPositionInds];        
         end
     end
@@ -721,13 +734,12 @@ fixationTable.Properties.VariableNames = ["fixDuration", "previousFixationRect",
 %write fixationData to .csv file
 writetable(fixationTable, fixationDataName)
 
-
+%save all variables in the matlab enviroment. this may be important for future use
 matlabDataFormat = 'matlabDataS%dR%d.csv';
 matlabDataName = sprintf(matlabDataFormat, subNum, runNum);
 matlabDataName = fullfile('output/matlabData', matlabDataName);
-%save all variables in the matlab enviroment. this may be important for future use
 save(matlabDataName)
 
 pfp_ptb_cleanup
 
-%end
+end

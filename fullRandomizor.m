@@ -12,7 +12,7 @@ function randomizor = fullRandomizor(trialsPerRun, totalScenes, shapeTextures, t
 %   already been created it just loads it in.
 %-----------------------------------------------------------------------
 
-origionalTrialsPerRun = trialsPerRun;
+origionalTrialsPerRun = 60;
 
 % Check if a pre-generated randomizor file exists
 if exist('trialDataFiles/randomizor.mat', 'file')
@@ -78,24 +78,29 @@ else
 
         allTrialsStart = 1;
         allTrialsEnd = trialsPerRun;
-
+        
+        % Add variables to the run struct
+        %set the 4 targets for this participant
+        allTargets = randsample(1:length(shapeTextures), totalTargets);
+        doubleTargetLocation = randi([1, 3]);
+        targetLocationTypeRandomizor = [1, 2, 3, doubleTargetLocation];
+        randomizedOrder = targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)));
+        allTargets(2, :) = randomizedOrder;
+        
         for run = 1:totalRuns
             if run == 1
                 trialsPerRun = 24;
             else
                 trialsPerRun = origionalTrialsPerRun;
+                if run == 2
+                    allTrialsEnd = trialsPerRun;
+                end
             end
             
             runStructName = sprintf('run%d', run);
             runStruct = struct();
             
-            % Add variables to the run struct
-            %set the 4 targets for this participant
-            allTargets = randsample(1:length(shapeTextures), totalTargets);
-            doubleTargetLocation = randi([1, 3]);
-            targetLocationTypeRandomizor = [1, 2, 3, doubleTargetLocation];
-            randomizedOrder = targetLocationTypeRandomizor(randperm(length(targetLocationTypeRandomizor)));
-            allTargets(2, :) = randomizedOrder;
+           
             
             allDistractors = setdiff(1:length(shapeTextures), allTargets(1, :), 'stable');
             
