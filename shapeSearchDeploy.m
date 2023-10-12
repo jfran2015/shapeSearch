@@ -4,7 +4,7 @@ function shapeSearchFourthDraft(subNum, runNum)
 %-----------------------------------------------------------------------
 % Script: shapeSearch.m
 % Author: Justin Frandsen
-% Date: 07/12/2023
+% Date: 10/12/2023
 % Description: Matlab script that presents experiment exploring how
 %              learning influences attention involving scene synatx.
 %
