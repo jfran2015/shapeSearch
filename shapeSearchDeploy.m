@@ -1,4 +1,4 @@
-function shapeSearchFourthDraft(subNum, runNum)
+function shapeSearchDeploy(subNum, runNum)
 %subNum = 50; %tk remove and uncomment function call
 %runNum = 1; %tk remove and uncomment function call
 %-----------------------------------------------------------------------
@@ -251,26 +251,29 @@ my = 1;
 % Define your instruction text as an array of strings, splitting it into parts.
 instructionText = {
     'In this experiment, each trial you will be presented a target shape. You ',
-    'will be asked to search for this shape in a following scene. All shapes ', 
-    'will appear with a sideways T in them. Each scene will have multiple ',
-    'shapes in it, but you will be asked to only report the direction of the ', 
-    'T in the target shape.', 
+    'will be asked to search for this shape in a following scene. Each scene ',
+    'will have multiple shapes in it. All shapes will appear with a sideways ',
+    'T in them, but you will be asked to only report the direction of the T ',
+    'in the target shape.',
+    'Press the SPACEBAR to continue.',
     'If the target shape appears with the T in this orientation press /',
     '',
     '',
     '',
     '',
+    'Press the SPACEBAR to continue.',
     'If the target shape appears with the T in this orientation press z'
     '',
     '',
     '',
     '',
+    'Press the SPACEBAR to begin.',
 };
 
 % Initialize variables for text display.
 instructionTextStart = 1;
 instructionTextEnd = 1;
-textChunkSize = 5;  % Number of lines to display at a time.
+textChunkSize = 6;  % Number of lines to display at a time.
 
 leftMargin = 450;
 presCount = 1;
