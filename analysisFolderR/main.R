@@ -29,7 +29,7 @@ all_fixation_files <- read(eye_files, get_subj_info = TRUE)
 all_fixation_files$run_num <- gsub("[^0-9]", "", all_fixation_files$run_num)
 all_fixation_files$sub_num <- gsub("[^0-9]", "", all_fixation_files$sub_num)
 
-all_bx_files_no_practice <- subset(all_bx_files, all_bx_files$run_num!=1)
+#all_bx_files_no_practice <- subset(all_bx_files1, all_bx_files$run_num!=1)
 # Behavioral Data Cleanup
 all_bx_files <- all_bx_files1 %>%
   filter(accuracy == 1,
@@ -57,8 +57,7 @@ all_bx_files <- all_bx_files1 %>%
 
 #add section later that removes participants without full runs
 
-bx_rt_summary <- all_bx_files %>% 
-  filter(accuracy == 1) %>% 
+bx_rt_summary <- all_bx_files  %>% 
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
   mutate(Validity = as.factor(trialTypeValid0Invalid1),
@@ -74,7 +73,12 @@ bx_rt_summary$additionalTargetDistractor <- recode_factor(bx_rt_summary$addition
 
 bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x=Validity, color = additionalTargetDistractor))+
-  geom_violin()
+  geom_violin()+
+  stat_summary(fun = "mean", 
+               geom = "point", 
+              shape = 18, 
+                            size = 3,
+                            position = position_dodge(width = .9))
 
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
