@@ -72,11 +72,11 @@ bx_rt_summary$additionalTargetDistractor <- recode_factor(bx_rt_summary$addition
                                         '1' = "Distractor Present")
 
 bx_rt_summary %>% 
-  ggplot(aes(y=meanRT, x=Validity, color = additionalTargetDistractor))+
+  ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
   geom_violin()+
   stat_summary(fun = "mean", 
                geom = "point", 
-              shape = 18, 
+               shape = 18, 
                             size = 3,
                             position = position_dodge(width = .9))
 
@@ -141,6 +141,10 @@ aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDist
                           data = all_first_fixation_summary)
 summary(aov_first_fixation)
 
+all_fixation_count <- all_fixation_files %>% 
+  filter(run_num != 1,
+         accuracy == 1)
+
 all_first_fixation_summary %>% 
   ggplot(aes(y=percent_first_fixation, 
              x=Validity, 
@@ -152,3 +156,22 @@ all_first_fixation_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 
+# Analysis of what number they looked at the fixation first
+all_fixation_count_summary <- all_fixation_count %>% 
+  group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
+  summarise(avg_count = mean(first_fixation_number, na.rm = TRUE)) %>% 
+  mutate(Validity = as.factor(thisTrialIncorrectTargetLocation),
+         additionalTargetDistractor = as.factor(thisTrialExtraTarget))
+
+aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
+                          data = all_fixation_count_summary)
+summary(aov_fixation_count)
+
+all_fixation_count_summary %>% 
+  ggplot(aes(x = Validity, y = avg_count, fill = additionalTargetDistractor))+
+  geom_violin()+
+  stat_summary(fun = "mean", 
+               geom = "point", 
+               shape = 18, 
+               size = 3,
+               position = position_dodge(width = .9))
