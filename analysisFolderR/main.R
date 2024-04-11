@@ -1,5 +1,8 @@
 library(tidyverse)
 library(lsmeans)
+library(ggpubr)
+library(wesanderson)
+
 getwd()
 
 read <- function(data_folder, get_subj_info = FALSE){
@@ -60,16 +63,9 @@ all_bx_files <- all_bx_files1 %>%
 bx_rt_summary <- all_bx_files  %>% 
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
-  mutate(Validity = as.factor(trialTypeValid0Invalid1),
-         additionalTargetDistractor = as.factor(trialTypeExtraTarget1NoExtraTarget0))
+  mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
-bx_rt_summary$Validity <- recode_factor(bx_rt_summary$Validity, 
-                                        '0' = "Valid", 
-                                        '1' = "Invalid")
-
-bx_rt_summary$additionalTargetDistractor <- recode_factor(bx_rt_summary$additionalTargetDistractor, 
-                                        '0' = "No distractor present", 
-                                        '1' = "Distractor Present")
 
 bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
@@ -77,13 +73,64 @@ bx_rt_summary %>%
   stat_summary(fun = "mean", 
                geom = "point", 
                shape = 18, 
-                            size = 3,
-                            position = position_dodge(width = .9))
+               size = 3,
+               position = position_dodge(width = .9))+
+  labs(title="Mean response time across validity\nand distractor presence",
+       x ="Validity", 
+       y = "Respnse Time (ms)",
+       fill = "Distractor Presence")+
+  theme_classic()+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=19),
+        plot.title=element_text(size=23),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=14))+
+  scale_y_continuous(limits = c(700, 2000),
+                     breaks = seq(700,2000, by = 100))+
+  scale_fill_manual(values=wes_palette(name="GrandBudapest1"))
+
 
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
 
 summary(aov_RT)
+
+#analysis by epoch
+all_bx_files <- all_bx_files %>%
+  mutate()
+bx_rt_epoch_summary <- all_bx_files  %>% 
+  group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0, run_num) %>% 
+  summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
+  mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+
+bx_rt_epoch_summary %>% 
+  ggplot(aes(y=meanRT, x=Validity, fill = run_num))+
+  geom_violin()+
+  stat_summary(fun = "mean", 
+               geom = "point", 
+               shape = 18, 
+               size = 3,
+               position = position_dodge(width = .9))+
+  labs(title="Mean response time across validity\nand distractor presence",
+       x ="Validity", 
+       y = "Respnse Time (ms)",
+       fill = "Distractor Presence")+
+  theme_classic()+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=19),
+        plot.title=element_text(size=23),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=14))+
+  scale_y_continuous(limits = c(700, 2000),
+                     breaks = seq(700,2000, by = 100))+
+  scale_fill_brewer(palette="Set3")
+
+aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
+                    data = bx_rt_epoch_summary)
+
+summary(aov_epoch_RT)
+
 
 # Perform pairwise tests
 lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
@@ -91,6 +138,8 @@ summary(lsd_results)
 
 hsd_results <- TukeyHSD(aov_RT)
 summary(hsd_results)
+
+
 
 #fixation analysis
 all_fixation_files <- all_fixation_files %>%
@@ -128,14 +177,8 @@ all_first_fixation <- all_fixation_files %>%
 all_first_fixation_summary <- all_first_fixation %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
-  mutate(Validity = as.factor(thisTrialIncorrectTargetLocation),
-         additionalTargetDistractor = as.factor(thisTrialExtraTarget))
-  
-all_first_fixation_summary$Validity <- recode_factor(all_first_fixation_summary$Validity, 
-                                        '0' = "Valid", '1' = "Invalid")
-
-all_first_fixation_summary$additionalTargetDistractor <- recode_factor(all_first_fixation_summary$additionalTargetDistractor, 
-                                                          '0' = "No distractor present", '1' = "Distractor Present")
+  mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
 aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_first_fixation_summary)
@@ -154,14 +197,28 @@ all_first_fixation_summary %>%
                geom = "point", 
                shape = 18, 
                size = 3,
-               position = position_dodge(width = .9))
+               position = position_dodge(width = .9))+
+  labs(title="Percentage of first fixation on target\nacross validity and distractor presence",
+       x ="Validity", 
+       y = "Percentage of First Fixation",
+       fill = "Distractor Presence")+
+  theme_classic()+
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=19),
+        plot.title=element_text(size=23),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=14))+
+  scale_y_continuous(limits = c(.1, .7),
+                     breaks = seq(.1,.7, by = .1),
+                     labels = scales::percent)
+
 
 # Analysis of what number they looked at the fixation first
 all_fixation_count_summary <- all_fixation_count %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(avg_count = mean(first_fixation_number, na.rm = TRUE)) %>% 
-  mutate(Validity = as.factor(thisTrialIncorrectTargetLocation),
-         additionalTargetDistractor = as.factor(thisTrialExtraTarget))
+  mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
 aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_fixation_count_summary)
@@ -175,3 +232,4 @@ all_fixation_count_summary %>%
                shape = 18, 
                size = 3,
                position = position_dodge(width = .9))
+
