@@ -64,10 +64,6 @@ bx_rt_summary <- all_bx_files  %>%
   mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
          additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
-
-bx_rt_summary$additionalTargetDistractor <- recode_factor(bx_rt_summary$additionalTargetDistractor, 
-                                                          '0' = "No distractor present", 
-                                                          '1' = "Distractor Present")
 bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
   geom_boxplot()+
@@ -89,8 +85,6 @@ bx_rt_summary %>%
   scale_y_continuous(limits = c(700, 2000),
                      breaks = seq(700,2000, by = 100))+
   scale_fill_manual(values=wes_palette(name="GrandBudapest1"))
-
-               position = position_dodge(width = .9))
 
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
@@ -137,7 +131,7 @@ summary(aov_epoch_RT)
 # Perform pairwise tests
 lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
 summary(lsd_results)
-=======
+
 #accuracy analysis
 all_bx_files_accuracy <- all_imported_bx_files %>%
   filter(run_num != 1,
@@ -269,7 +263,6 @@ all_fixation_count_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 
-=======
 # distractor analysis
 
 distractor_df <- joined_fixation_data %>% 
@@ -323,3 +316,4 @@ first_fixation_extra_target_summary %>%
                shape = 18, 
                size = 3,
                position = position_dodge(width = .9))
+
