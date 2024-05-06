@@ -2,7 +2,6 @@ library(tidyverse)
 library(lsmeans)
 library(ggpubr)
 library(wesanderson)
-library(rstatix)
 
 getwd()
 
@@ -36,23 +35,18 @@ all_fixation_files$sub_num <- gsub("[^0-9]", "", all_fixation_files$sub_num)
 #all_bx_files_no_practice <- subset(all_imported_bx_files, all_bx_files$run_num!=1)
 # Behavioral Data Cleanup
 
+sub_run_counts <- all_imported_bx_files %>%
+  group_by(sub_num) %>%
+  summarize(num_runs = n_distinct(run_num))
+
 all_imported_bx_files <- all_imported_bx_files %>% 
   mutate(sub_num = as.factor(sub_num),
          run_num = as.factor(run_num))
 
-unique_run_summary <- all_imported_bx_files  %>% 
-  group_by(sub_num) %>% 
-  summarise(unique_runs = n_distinct(run_num),
-            overall_accuracy = mean(accuracy, na.rm = TRUE))
-
-all_imported_bx_files <- left_join(all_imported_bx_files, unique_run_summary, by = "sub_num")
-
 all_bx_files <- all_imported_bx_files %>%
   filter(accuracy == 1,
          run_num != 1,
-         sub_num != 20,
-         unique_runs == 7,
-         overall_accuracy > 0.80) %>%
+         sub_num != 20) %>%
   group_by(sub_num, 
            trialTypeValid0Invalid1, 
            trialTypeExtraTarget1NoExtraTarget0) %>% 
@@ -70,13 +64,16 @@ bx_rt_summary <- all_bx_files  %>%
   mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
          additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
-unique_run_summary <- all_bx_files %>% 
-  group_by(sub_num) %>% 
-  summarise(unique_runs = n_distinct(run_num))
+<<<<<<< HEAD
+=======
+bx_rt_summary$Validity <- recode_factor(bx_rt_summary$Validity, 
+                                        '0' = "Valid", 
+                                        '1' = "Invalid")
 
-nicelimits <- function(x) {
-  range(scales::extended_breaks(only.loose = TRUE)(x))
-}
+bx_rt_summary$additionalTargetDistractor <- recode_factor(bx_rt_summary$additionalTargetDistractor, 
+                                                          '0' = "No distractor present", 
+                                                          '1' = "Distractor Present")
+>>>>>>> b1797345952b90dfb5ecf9a49eed9007c7dac58b
 
 bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
@@ -85,6 +82,7 @@ bx_rt_summary %>%
                geom = "point", 
                shape = 18, 
                size = 3,
+<<<<<<< HEAD
                position = position_dodge(width = .9))+
   labs(title="Mean response time across validity\nand distractor presence",
        x ="Validity", 
@@ -96,15 +94,20 @@ bx_rt_summary %>%
         plot.title=element_text(size=23),
         legend.text=element_text(size=12),
         legend.title=element_text(size=14))+
-  scale_y_continuous(limits = nicelimits)+
+  scale_y_continuous(limits = c(700, 2000),
+                     breaks = seq(700,2000, by = 100))+
   scale_fill_manual(values=wes_palette(name="GrandBudapest1"))
+
+=======
+               position = position_dodge(width = .9))
+>>>>>>> b1797345952b90dfb5ecf9a49eed9007c7dac58b
 
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
 
 summary(aov_RT)
-model.tables(aov_RT, "means")
 
+<<<<<<< HEAD
 #analysis by epoch
 all_bx_files <- all_bx_files %>%
   mutate()
@@ -145,7 +148,7 @@ summary(aov_epoch_RT)
 # Perform pairwise tests
 lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
 summary(lsd_results)
-
+=======
 #accuracy analysis
 all_bx_files_accuracy <- all_imported_bx_files %>%
   filter(run_num != 1,
@@ -160,12 +163,21 @@ all_bx_files_accuracy <- all_imported_bx_files %>%
          accuracy = ifelse(rt > mean(rt, na.rm=TRUE)+3*sd(rt, na.rm = TRUE), NA, accuracy),
          accuracy = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, accuracy)) %>% 
   ungroup()
+>>>>>>> b1797345952b90dfb5ecf9a49eed9007c7dac58b
+
 bx_accuracy_summary <- all_bx_files_accuracy %>% 
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanAccuracy = mean(accuracy, na.rm = TRUE)) %>% 
   mutate(Validity = as.factor(trialTypeValid0Invalid1),
          additionalTargetDistractor = as.factor(trialTypeExtraTarget1NoExtraTarget0))
 
+bx_accuracy_summary$Validity <- recode_factor(bx_accuracy_summary$Validity, 
+                                        '0' = "Valid", 
+                                        '1' = "Invalid")
+
+bx_accuracy_summary$additionalTargetDistractor <- recode_factor(bx_accuracy_summary$additionalTargetDistractor, 
+                                                          '0' = "No distractor present", 
+                                                          '1' = "Distractor Present")
 
 aov_Accuracy <- aov(meanAccuracy ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_accuracy_summary)
@@ -179,7 +191,7 @@ bx_accuracy_summary %>%
                geom = "point", 
                shape = 18, 
                size = 3,
-               position = position_dodge(width = .75))
+               position = position_dodge(width = .9))
 
 
 
@@ -200,12 +212,8 @@ joined_fixation_data <- left_join(all_fixation_files,
                                        'trial_num'='trial_num', 
                                        'run_num'='run_num'))
 
-#joined_fixation_data <- left_join(joined_fixation_data, unique_run_summary, by = "sub_num")
-
 #add accuracy from the joined df to the main df
 all_fixation_files$accuracy <- joined_fixation_data$accuracy
-all_fixation_files$overall_accuracy <- joined_fixation_data$overall_accuracy
-all_fixation_files$unique_runs <- joined_fixation_data$unique_runs
 
 
 
@@ -220,15 +228,24 @@ all_fixation_files <- all_fixation_files %>%
 all_first_fixation <- all_fixation_files %>% 
   filter(fixation_count == 1,
          run_num != 1,
-         accuracy == 1,
-         unique_runs == 7,
-         overall_accuracy > .80)
+         accuracy == 1)
 
 all_first_fixation_summary <- all_first_fixation %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
+<<<<<<< HEAD
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
          additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+=======
+  mutate(Validity = as.factor(thisTrialIncorrectTargetLocation),
+         additionalTargetDistractor = as.factor(thisTrialExtraTarget))
+
+all_first_fixation_summary$Validity <- recode_factor(all_first_fixation_summary$Validity, 
+                                                     '0' = "Valid", '1' = "Invalid")
+
+all_first_fixation_summary$additionalTargetDistractor <- recode_factor(all_first_fixation_summary$additionalTargetDistractor, 
+                                                                       '0' = "No distractor present", '1' = "Distractor Present")
+>>>>>>> b1797345952b90dfb5ecf9a49eed9007c7dac58b
 
 aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_first_fixation_summary)
@@ -270,6 +287,13 @@ all_fixation_count_summary <- all_fixation_count %>%
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
          additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
 
+all_fixation_count_summary$Validity <- recode_factor(all_fixation_count_summary$Validity, 
+                                                     '0' = "Valid", '1' = "Invalid")
+
+all_fixation_count_summary$additionalTargetDistractor <- recode_factor(all_fixation_count_summary$additionalTargetDistractor, 
+                                                                       '0' = "No distractor present", '1' = "Distractor Present")
+
+
 aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_fixation_count_summary)
 summary(aov_fixation_count)
@@ -283,6 +307,8 @@ all_fixation_count_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 
+<<<<<<< HEAD
+=======
 # distractor analysis
 
 distractor_df <- joined_fixation_data %>% 
@@ -336,4 +362,12 @@ first_fixation_extra_target_summary %>%
                shape = 18, 
                size = 3,
                position = position_dodge(width = .9))
+  
 
+                                
+                                
+                                
+                                
+                                
+                                
+>>>>>>> b1797345952b90dfb5ecf9a49eed9007c7dac58b
