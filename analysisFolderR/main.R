@@ -105,6 +105,14 @@ aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Vali
 summary(aov_RT)
 model.tables(aov_RT, "means")
 
+aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
+                    data = bx_rt_epoch_summary)
+
+summary(aov_epoch_RT)
+# Perform pairwise tests
+lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
+summary(lsd_results)
+
 #analysis by epoch
 all_bx_files <- all_bx_files %>%
   mutate()
@@ -135,16 +143,6 @@ bx_rt_epoch_summary %>%
   scale_y_continuous(limits = c(700, 2000),
                      breaks = seq(700,2000, by = 100))+
   scale_fill_brewer(palette="Set3")
-
-aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
-                    data = bx_rt_epoch_summary)
-
-summary(aov_epoch_RT)
-
-
-# Perform pairwise tests
-lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
-summary(lsd_results)
 
 #accuracy analysis
 all_bx_files_accuracy <- all_imported_bx_files %>%
@@ -233,6 +231,10 @@ all_first_fixation_summary <- all_first_fixation %>%
 aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_first_fixation_summary)
 summary(aov_first_fixation)
+model.tables(aov_first_fixation, "means")
+
+lsd_results <- lsmeans(aov_first_fixation, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
+summary(lsd_results)
 
 all_fixation_count <- all_fixation_files %>% 
   filter(run_num != 1,
