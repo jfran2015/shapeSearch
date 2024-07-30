@@ -11,6 +11,7 @@ function detectKeyPressed()
 % - Script will output key name into Command Window
 %-----------------------------------------------------------------------
     WaitSecs(1);
+    KbName('UnifyKeyNames');
     [~, keyCode] = KbWait();
     keyPressed = KbName(keyCode);
     disp(['Key pressed: ', keyPressed]);
