@@ -3,6 +3,7 @@ library(lsmeans)
 library(ggpubr)
 library(wesanderson)
 library(rstatix)
+library(R.matlab)
 
 getwd()
 
@@ -61,6 +62,26 @@ all_bx_files <- all_imported_bx_files %>%
          rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt)) %>% 
   ungroup()
 
+locations <- readMat("~/Documents/MATLAB/repos/shapeSearch/trialDataFiles/shape_positions_main_checked.mat")
+head(locations$savedPositions)
+savedPositions <- locations$savedPositions
+all_bx_files$target_position_num <- 0
+
+for (scene_num in 1:length(savedPositions[, 1])){
+  for (position_num in 1:4){
+    position_info = savedPositions[scene_num, position_num]
+    p1 <- position_info[[1]][[1]][[1]]
+    p2 <- position_info[[1]][[1]][[2]]
+    p3 <- position_info[[1]][[1]][[3]]
+    p4 <- position_info[[1]][[1]][[4]]
+    
+    for (trial_num in 1:length(all_bx_files$sub_num)){
+      if (all_bx_files$target_position_1[trial_num] == p1 & all_bx_files$target_position_2[trial_num] == p2 & all_bx_files$target_position_3[trial_num] == p3 & all_bx_files$target_position_4[trial_num] == p4){
+        all_bx_files$target_position_num[trial_num] = position_num
+      }
+    }
+  }
+}
 
 #add section later that removes participants without full runs
 
