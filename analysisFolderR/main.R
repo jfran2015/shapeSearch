@@ -62,45 +62,26 @@ all_bx_files <- all_imported_bx_files %>%
          rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt)) %>% 
   ungroup()
 
-locations <- readMat("~/MATLAB/repos/shapeSearch/trialDataFiles/shape_positions_main_checked.mat", header=FALSE, comment.char="#")
-head(locations$savedPositions)
-savedPositions <- locations$savedPositions
-all_bx_files$target_position_num <- 0
-all_bx_files$scene_inds <- 0
-all_bx_files$p1 <- 0
-all_bx_files$p2 <- 0
-all_bx_files$p3 <- 0
-all_bx_files$p4 <- 0
 
-tolerance <- 0.001
+scene_info <- read.csv("../output/sceneInfo.csv")
+colnames(scene_info)<- c("sub_num","run_num","trial_num", "scene_ind", "position_ind")
+scene_info <- scene_info %>% 
+  mutate(sub_num = as.factor(sub_num),
+         run_num = as.factor(run_num))
 
-for (scene_num in 1:length(savedPositions[, 1])){
-  for (position_num in 1:length(savedPositions[1,])){
-    position_info = savedPositions[scene_num, position_num]
-    p1 <- position_info[[1]][[1]][[1]]
-    p2 <- position_info[[1]][[1]][[2]]
-    p3 <- position_info[[1]][[1]][[3]]
-    p4 <- position_info[[1]][[1]][[4]]
-    
-    cat("Checking scene:", scene_num, "position:", position_num, "\n")
-    cat("Position info:", p1, p2, p3, p4, "\n")
-    for (trial_num in 1:length(all_bx_files$sub_num)){
-      
-      #cat("Trial info:", all_bx_files$target_position_1[trial_num], all_bx_files$target_position_2[trial_num], all_bx_files$target_position_3[trial_num], all_bx_files$target_position_4[trial_num], "\n")
-      if (all_bx_files$target_position_1[trial_num] - p1 < tolerance && 
-          all_bx_files$target_position_2[trial_num] - p2 < tolerance && 
-          all_bx_files$target_position_3[trial_num] - p3 < tolerance && 
-          all_bx_files$target_position_4[trial_num] - p4 < tolerance){
-        all_bx_files$target_position_num[trial_num] = position_num
-        all_bx_files$scene_inds[trial_num] = scene_num
-      }
-    }
-  }
-}
+all_bx_files <- left_join(all_bx_files, scene_info, by= c("sub_num","run_num","trial_num"))
+
+overlap_info <- read.csv("../output/overlap_info.csv", header = FALSE)
+colnames(overlap_info)<- c("scene_ind","1","2", "3", "4")
+overlap_info_long <- overlap_info %>% 
+  pivot_longer(!scene_ind, names_to = "position_ind", values_to = "overlapYes1No0") %>% 
+  mutate(position_ind = as.numeric(position_ind))
+
+all_bx_files <- left_join(all_bx_files, overlap_info_long, by = c("scene_ind", "position_ind"))
 
 #add section later that removes participants without full runs
 
-bx_rt_summary <- all_bx_files  %>% 
+bx_rt_summary <- all_bx_files  %>%
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
   mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),

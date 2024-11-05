@@ -14,22 +14,26 @@ function shapeLocationOverlapChecker(sceneTypeMain0Practice1, unchecked0checked1
 %-----------------------------------------------------------------------
 
 if sceneTypeMain0Practice1 == 0 && unchecked0checked1 == 0
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_main.mat');
-    shapePositions = load('trialDataFiles/shape_positions_main.mat');
+    shapeLocationTypes = load('../trialDataFiles/shape_location_types_main.mat');
+    shapePositions = load('../trialDataFiles/shape_positions_main.mat');
 elseif sceneTypeMain0Practice1 == 1 && unchecked0checked1 == 0
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice.mat');
-    shapePositions = load('trialDataFiles/shape_positions_practice.mat');
+    shapeLocationTypes = load('../trialDataFiles/shape_location_types_practice.mat');
+    shapePositions = load('../trialDataFiles/shape_positions_practice.mat');
 elseif sceneTypeMain0Practice1 == 0 && unchecked0checked1 == 1
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_main_checked.mat');
-    shapePositions = load('trialDataFiles/shape_positions_main_checked.mat');
+    shapeLocationTypes = load('../trialDataFiles/shape_location_types_main_checked.mat');
+    shapePositions = load('../trialDataFiles/shape_positions_main_checked.mat');
 elseif sceneTypeMain0Practice1 == 1 && unchecked0checked1 == 1
-    shapeLocationTypes = load('trialDataFiles/shape_location_types_practice_checked.mat');
-    shapePositions = load('trialDataFiles/shape_positions_practice_checked.mat');
+    shapeLocationTypes = load('../trialDataFiles/shape_location_types_practice_checked.mat');
+    shapePositions = load('../trialDataFiles/shape_positions_practice_checked.mat');
 end
+
+
 
 savedPositions = shapePositions.savedPositions;
 numScenes = length(savedPositions);
 numRects = 4;
+
+scene_matrix = scene_matrix_creator(savedPositions);
 
 totalDifferentMatchedScenes = 0;
 floorWithWall = 0;
@@ -63,10 +67,16 @@ for thisSceneNum = 1:numScenes
                         
                         if primarySceneType == 1 && secondarySceneType == 3 || primarySceneType == 3 && secondarySceneType == 1
                             counterWithWall = counterWithWall + 1;
+                            scene_matrix(sceneNum, i+1) = 1;
+                            scene_matrix(thisSceneNum, k+1) = 1;
                         elseif primarySceneType == 1 && secondarySceneType == 2 || primarySceneType == 2 && secondarySceneType == 1
                             floorWithWall = floorWithWall + 1;
+                            scene_matrix(sceneNum, i+1) = 1;
+                            scene_matrix(thisSceneNum, k+1) = 1;
                         elseif primarySceneType == 2 && secondarySceneType == 3 || primarySceneType == 3 && secondarySceneType == 2
                             floorWithCounter = floorWithCounter + 1;
+                            scene_matrix(sceneNum, i+1) = 1;
+                            scene_matrix(thisSceneNum, k+1) = 1;
                         end
                     end
                 end
@@ -94,6 +104,8 @@ for sceneNum = 1:numScenes
         fprintf("SceneNum: %d, is bad\n", sceneNum);
     end
 end
+
+writematrix(scene_matrix, '../output/overlap_info.csv')
 end
 
 function overlap = rectOverlap(rect1, rect2)
@@ -115,5 +127,13 @@ function overlap = rectOverlap(rect1, rect2)
     bottom2 = y2 + h2;
     
     % Check for overlap
-    overlap = (x1 < right2) && (x2 < right1) && (y1 < bottom2) && (y2 < bottom1);   
+    overlap = (x1 < right2) && (x2 < right1) && (y1 < bottom2) && (y2 < bottom1);
+end
+
+function scene_matrix = scene_matrix_creator(positions)
+    numRows = length(positions);
+    numCols = 5;  % Adjust this to the total number of columns you want
+
+    % Create the matrix with the first column counting from 1 to 96, and the rest as zeros
+    scene_matrix = [(1:numRows)', zeros(numRows, numCols - 1)];
 end
