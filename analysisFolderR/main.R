@@ -62,41 +62,41 @@ all_bx_files <- all_imported_bx_files %>%
          rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt)) %>% 
   ungroup()
 
-#locations <- readMat("~/MATLAB/repos/shapeSearch/trialDataFiles/shape_positions_main_checked.mat", header=FALSE, comment.char="#")
-#head(locations$savedPositions)
-#savedPositions <- locations$savedPositions
-#all_bx_files$target_position_num <- 0
-#all_bx_files$scene_inds <- 0
-#all_bx_files$p1 <- 0
-#all_bx_files$p2 <- 0
-#all_bx_files$p3 <- 0
-#all_bx_files$p4 <- 0
-#
-#tolerance <- 1
-#
-#for (scene_num in 1:length(savedPositions[, 1])){
-#  for (position_num in 1:length(savedPositions[1,])){
-#    position_info = savedPositions[scene_num, position_num]
-#    p1 <- position_info[[1]][[1]][[1]]
-#    p2 <- position_info[[1]][[1]][[2]]
-#    p3 <- position_info[[1]][[1]][[3]]
-#    p4 <- position_info[[1]][[1]][[4]]
-#    
-#    cat("Checking scene:", scene_num, "position:", position_num, "\n")
-#    cat("Position info:", p1, p2, p3, p4, "\n")
-#    for (trial_num in 1:length(all_bx_files$sub_num)){
-#      
-#      #cat("Trial info:", all_bx_files$target_position_1[trial_num], all_bx_files$target_position_2[trial_num], all_bx_files$target_position_3[trial_num], all_bx_files$target_position_4[trial_num], "\n")
-#      if (all_bx_files$target_position_1[trial_num] - p1 < tolerance && 
-#          all_bx_files$target_position_2[trial_num] - p2 < tolerance && 
-#          all_bx_files$target_position_3[trial_num] - p3 < tolerance && 
-#          all_bx_files$target_position_4[trial_num] - p4 < tolerance){
-#        all_bx_files$target_position_num[trial_num] = position_num
-#        all_bx_files$scene_inds[trial_num] = scene_num
-#      }
-#    }
-#  }
-#}
+locations <- readMat("~/MATLAB/repos/shapeSearch/trialDataFiles/shape_positions_main_checked.mat", header=FALSE, comment.char="#")
+head(locations$savedPositions)
+savedPositions <- locations$savedPositions
+all_bx_files$target_position_num <- 0
+all_bx_files$scene_inds <- 0
+all_bx_files$p1 <- 0
+all_bx_files$p2 <- 0
+all_bx_files$p3 <- 0
+all_bx_files$p4 <- 0
+
+tolerance <- 0.001
+
+for (scene_num in 1:length(savedPositions[, 1])){
+  for (position_num in 1:length(savedPositions[1,])){
+    position_info = savedPositions[scene_num, position_num]
+    p1 <- position_info[[1]][[1]][[1]]
+    p2 <- position_info[[1]][[1]][[2]]
+    p3 <- position_info[[1]][[1]][[3]]
+    p4 <- position_info[[1]][[1]][[4]]
+    
+    cat("Checking scene:", scene_num, "position:", position_num, "\n")
+    cat("Position info:", p1, p2, p3, p4, "\n")
+    for (trial_num in 1:length(all_bx_files$sub_num)){
+      
+      #cat("Trial info:", all_bx_files$target_position_1[trial_num], all_bx_files$target_position_2[trial_num], all_bx_files$target_position_3[trial_num], all_bx_files$target_position_4[trial_num], "\n")
+      if (all_bx_files$target_position_1[trial_num] - p1 < tolerance && 
+          all_bx_files$target_position_2[trial_num] - p2 < tolerance && 
+          all_bx_files$target_position_3[trial_num] - p3 < tolerance && 
+          all_bx_files$target_position_4[trial_num] - p4 < tolerance){
+        all_bx_files$target_position_num[trial_num] = position_num
+        all_bx_files$scene_inds[trial_num] = scene_num
+      }
+    }
+  }
+}
 
 #add section later that removes participants without full runs
 
