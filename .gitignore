@@ -46,17 +46,3 @@ Icon?
 *.bak
 *.swp
 *.swo
-
-# Experiment data
-/data/
-*.csv
-*.tsv
-*.xlsx
-
-# Ignore results and figures
-/results/
-/figures/
-*.pdf
-*.png
-*.jpg
-*.svg
