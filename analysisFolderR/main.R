@@ -1,21 +1,30 @@
+# ======= LIBRARIES & DATA IMPORT =====================
 library(tidyverse)
 library(lsmeans)
 library(ggpubr)
 library(wesanderson)
 library(rstatix)
 library(R.matlab)
+library(readxl)
+library(effectsize)
+
+# Import demographic data
+JustinsDemographics <- read_excel("JustinsDemographics.xlsx", sheet = "ShapeSearch")
+JustinsDemographics = JustinsDemographics[-1:-2, ]  # Remove first two rows (headers/notes)
+JustinsDemographics <- JustinsDemographics %>% 
+  select(sub_num=Q1, Handedness, Age, Vision, Contacts, Colorblind, Gender, Ethnicity, Race)
 
 getwd()
 
+# ======= DATA READING FUNCTION =====================
+# Reads all files in a folder and optionally adds subject/run info
 read <- function(data_folder, get_subj_info = FALSE){
   full <- 0
   for (file in data_folder) {
-    #read in data
     individual <- read.csv(file = file)
     if (get_subj_info == TRUE){
       run_num = str_sub(file,-6, -4)
       sub_num = str_sub(file,-8, -6)
-      
       individual$run_num <- run_num
       individual$sub_num <- sub_num
     }
@@ -25,29 +34,33 @@ read <- function(data_folder, get_subj_info = FALSE){
   return(fixed)
 }
 
+# ======= IMPORT BEHAVIORAL & EYE DATA =====================
 bx_files <- dir(path = "../output/bxData/", full.names = TRUE)
 eye_files <- dir(path = "../output/eyeData/fixationData", full.names = TRUE)
 
 all_imported_bx_files <- read(bx_files)
 all_fixation_files <- read(eye_files, get_subj_info = TRUE)
 
+# Clean up subject/run numbers
 all_fixation_files$run_num <- gsub("[^0-9]", "", all_fixation_files$run_num)
 all_fixation_files$sub_num <- gsub("[^0-9]", "", all_fixation_files$sub_num)
 
-#all_bx_files_no_practice <- subset(all_imported_bx_files, all_bx_files$run_num!=1)
-# Behavioral Data Cleanup
-
+# ======= BEHAVIORAL DATA CLEANUP =======
 all_imported_bx_files <- all_imported_bx_files %>% 
   mutate(sub_num = as.factor(sub_num),
          run_num = as.factor(run_num))
 
+# Summarize unique runs and accuracy per subject
 unique_run_summary <- all_imported_bx_files  %>% 
   group_by(sub_num) %>% 
   summarise(unique_runs = n_distinct(run_num),
             overall_accuracy = mean(accuracy, na.rm = TRUE))
 
+# Merge demographics and run summary
+demographics_for_participants <- left_join(unique_run_summary, JustinsDemographics, by = "sub_num")
 all_imported_bx_files <- left_join(all_imported_bx_files, unique_run_summary, by = "sub_num")
 
+# Filter and clean RT data
 all_bx_files <- all_imported_bx_files %>%
   filter(accuracy == 1,
          run_num != 1,
@@ -62,7 +75,7 @@ all_bx_files <- all_imported_bx_files %>%
          rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt)) %>% 
   ungroup()
 
-
+# ======= SCENE & OVERLAP INFO JOIN =====================
 scene_info <- read.csv("../output/sceneInfo.csv")
 colnames(scene_info)<- c("sub_num","run_num","trial_num", "scene_ind", "position_ind")
 scene_info <- scene_info %>% 
@@ -79,8 +92,7 @@ overlap_info_long <- overlap_info %>%
 
 all_bx_files <- left_join(all_bx_files, overlap_info_long, by = c("scene_ind", "position_ind"))
 
-#add section later that removes participants without full runs
-
+# ======= RT SUMMARY & PLOTTING =======
 bx_rt_summary <- all_bx_files  %>%
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
@@ -91,10 +103,12 @@ unique_run_summary <- all_bx_files %>%
   group_by(sub_num) %>% 
   summarise(unique_runs = n_distinct(run_num))
 
+# Helper for nice y-axis limits
 nicelimits <- function(x) {
   range(scales::extended_breaks(only.loose = TRUE)(x))
 }
 
+# RT boxplot
 bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
   geom_boxplot()+
@@ -116,21 +130,59 @@ bx_rt_summary %>%
   scale_y_continuous(limits = nicelimits)+
   scale_fill_manual(values=wes_palette(name="GrandBudapest1"))
 
+# ======= RT ANOVA & SUMMARY =======
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
-
 summary(aov_RT)
 model.tables(aov_RT, "means")
+eta_squared(aov_RT, partial = TRUE, ci = 0.95)
 
+emmeans(aov_RT, ~ Validity)
+emmeans(aov_RT, ~ additionalTargetDistractor)
+emmeans(aov_RT, ~ Validity * additionalTargetDistractor)
+summary(emm)
+
+# RT summary stats by condition
+bx_rt_summary %>%
+  group_by(Validity, additionalTargetDistractor) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+# By distractor
+bx_rt_summary %>%
+  group_by(additionalTargetDistractor) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+# By validity
+bx_rt_summary %>%
+  group_by(Validity) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+# ======= EPOCH (RUN) ANALYSIS =======
 aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
                     data = bx_rt_epoch_summary)
-
 summary(aov_epoch_RT)
-# Perform pairwise tests
+
+# Pairwise tests
 lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
 summary(lsd_results)
 
-#analysis by epoch
+# ======= RT BY EPOCH PLOTTING =======
+# (Note: bx_rt_epoch_summary is created below)
 all_bx_files <- all_bx_files %>%
   mutate()
 bx_rt_epoch_summary <- all_bx_files  %>% 
@@ -161,11 +213,12 @@ bx_rt_epoch_summary %>%
                      breaks = seq(700,2000, by = 100))+
   scale_fill_brewer(palette="Set3")
 
-#accuracy analysis
+# ======= ACCURACY ANALYSIS =======
 all_bx_files_accuracy <- all_imported_bx_files %>%
-  filter(run_num != 1,
-         accuracy != 2,
-         sub_num != 20) %>% 
+  filter(accuracy != 2,
+         run_num != 1,
+         unique_runs == 7,
+         overall_accuracy > 0.80) %>% 
   mutate(sub_num = as.factor(sub_num),
          run_num = as.factor(run_num)) %>% 
   group_by(sub_num, 
@@ -175,18 +228,48 @@ all_bx_files_accuracy <- all_imported_bx_files %>%
          accuracy = ifelse(rt > mean(rt, na.rm=TRUE)+3*sd(rt, na.rm = TRUE), NA, accuracy),
          accuracy = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, accuracy)) %>% 
   ungroup()
+
 bx_accuracy_summary <- all_bx_files_accuracy %>% 
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanAccuracy = mean(accuracy, na.rm = TRUE)) %>% 
   mutate(Validity = as.factor(trialTypeValid0Invalid1),
          additionalTargetDistractor = as.factor(trialTypeExtraTarget1NoExtraTarget0))
 
-
 aov_Accuracy <- aov(meanAccuracy ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_accuracy_summary)
-
 summary(aov_Accuracy)
+model.tables(aov_Accuracy, "means")
+eta_squared(aov_Accuracy, partial = TRUE, ci = 0.95)
 
+# Accuracy summary stats
+bx_accuracy_summary %>%
+  group_by(Validity, additionalTargetDistractor) %>%
+  summarise(
+    mean_accuracy = mean(meanAccuracy),
+    sd_accuracy = sd(meanAccuracy),
+    n = n() / 2,
+    se = sd_accuracy / sqrt(n)
+  )
+
+bx_accuracy_summary %>%
+  group_by(additionalTargetDistractor) %>%
+  summarise(
+    mean_accuracy = mean(meanAccuracy),
+    sd_accuracy = sd(meanAccuracy),
+    n = n() / 2,
+    se = sd_accuracy / sqrt(n)
+  )
+
+bx_accuracy_summary %>%
+  group_by(Validity) %>%
+  summarise(
+    mean_accuracy = mean(meanAccuracy),
+    sd_accuracy = sd(meanAccuracy),
+    n = n() / 2,
+    se = sd_accuracy / sqrt(n)
+  )
+
+# Accuracy boxplot
 bx_accuracy_summary %>% 
   ggplot(aes(x = Validity, y = meanAccuracy, fill = additionalTargetDistractor))+
   geom_boxplot()+
@@ -196,35 +279,29 @@ bx_accuracy_summary %>%
                size = 3,
                position = position_dodge(width = .75))
 
-
-
-#fixation analysis
+# ======= FIXATION ANALYSIS =======
+# Clean up fixation data and join with behavioral data
 all_fixation_files <- all_fixation_files %>%
-  mutate(sub_num = as.numeric(sub_num), #this line is only to remove the leading 0 which caused an issue with a left join
+  mutate(sub_num = as.numeric(sub_num), # Remove leading 0s
          sub_num = as.factor(sub_num),
-         run_num = as.numeric(run_num), #this line is only to remove the leading 0 which caused an issue with a left join
+         run_num = as.numeric(run_num),
          run_num = as.factor(run_num),
          correctTarget = ifelse(previousFixationRect == targetPositionInds, 1, 0),
          trial_num = trialNum)
 
-#join the fixation data with the bx_data. This gives us access to accuracy because later analysis will probably be done on
-#only accurate trials
+# Join fixation and behavioral data for accuracy info
 joined_fixation_data <- left_join(all_fixation_files, 
                                   all_imported_bx_files, 
                                   by=c('sub_num'='sub_num', 
                                        'trial_num'='trial_num', 
                                        'run_num'='run_num'))
 
-#joined_fixation_data <- left_join(joined_fixation_data, unique_run_summary, by = "sub_num")
-
-#add accuracy from the joined df to the main df
+# Add accuracy columns to fixation data
 all_fixation_files$accuracy <- joined_fixation_data$accuracy
 all_fixation_files$overall_accuracy <- joined_fixation_data$overall_accuracy
 all_fixation_files$unique_runs <- joined_fixation_data$unique_runs
 
-
-
-#added fixation count (this is a count of how many fixations were made each trial and what order)
+# Add fixation count/order columns
 all_fixation_files <- all_fixation_files %>%
   group_by(sub_num, run_num, trial_num) %>%
   mutate(
@@ -232,6 +309,7 @@ all_fixation_files <- all_fixation_files %>%
     first_correct_fixation = ifelse(correctTarget == 1 & cumsum(correctTarget == 1) == 1, 1, 0),
     first_fixation_number = ifelse(first_correct_fixation == 1, fixation_count, NA))
 
+# ======= FIRST FIXATION ANALYSIS =====================
 all_first_fixation <- all_fixation_files %>% 
   filter(fixation_count == 1,
          run_num != 1,
@@ -249,6 +327,35 @@ aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDist
                           data = all_first_fixation_summary)
 summary(aov_first_fixation)
 model.tables(aov_first_fixation, "means")
+eta_squared(aov_first_fixation, partial = TRUE, ci = 0.95)
+
+# First fixation summary stats
+all_first_fixation_summary %>%
+  group_by(thisTrialIncorrectTargetLocation, thisTrialExtraTarget) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
+
+all_first_fixation_summary %>%
+  group_by(thisTrialExtraTarget) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
+
+all_first_fixation_summary %>%
+  group_by(thisTrialIncorrectTargetLocation) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
 
 lsd_results <- lsmeans(aov_first_fixation, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
 summary(lsd_results)
@@ -257,6 +364,7 @@ all_fixation_count <- all_fixation_files %>%
   filter(run_num != 1,
          accuracy == 1)
 
+# First fixation violin plot
 all_first_fixation_summary %>% 
   ggplot(aes(y=percent_first_fixation, 
              x=Validity, 
@@ -281,8 +389,7 @@ all_first_fixation_summary %>%
                      breaks = seq(.1,.7, by = .1),
                      labels = scales::percent)
 
-
-# Analysis of what number they looked at the fixation first
+# ======= FIXATION COUNT ANALYSIS =====================
 all_fixation_count_summary <- all_fixation_count %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(avg_count = mean(first_fixation_number, na.rm = TRUE)) %>% 
@@ -293,6 +400,7 @@ aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Erro
                           data = all_fixation_count_summary)
 summary(aov_fixation_count)
 
+# Fixation count violin plot
 all_fixation_count_summary %>% 
   ggplot(aes(x = Validity, y = avg_count, fill = additionalTargetDistractor))+
   geom_violin()+
@@ -302,8 +410,7 @@ all_fixation_count_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 
-# distractor analysis
-
+# ======= DISTRACTOR ANALYSIS =====================
 distractor_df <- joined_fixation_data %>% 
   mutate(correctFixTarget = ifelse(previousFixationRect == targetPositionInds, 1, 0),
          currentFixETDistractor = ifelse(previousFixationRect == extraTargetShapePosition, 1, 0),
@@ -347,6 +454,7 @@ extra_target_first_fix <- aov(percent_first_fixation ~ Validity*DistractorPositi
                           data = first_fixation_extra_target_summary)
 summary(extra_target_first_fix)
 
+# Distractor violin plot
 first_fixation_extra_target_summary %>% 
   ggplot(aes(x = Validity, y = percent_first_fixation, fill = DistractorPositionValidity))+
   geom_violin()+
@@ -355,4 +463,6 @@ first_fixation_extra_target_summary %>%
                shape = 18, 
                size = 3,
                position = position_dodge(width = .9))
+# ======= END OF SCRIPT =====================
+
 
