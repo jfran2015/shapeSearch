@@ -18,8 +18,8 @@ getwd()
 
 # ======= DATA READING FUNCTION =====================
 # Reads all files in a folder and optionally adds subject/run info
-read <- function(data_folder, get_subj_info = FALSE){
-  full <- 0
+read <- function(data_folder, get_subj_info = FALSE) {
+  full <- data.frame()
   for (file in data_folder) {
     individual <- read.csv(file = file)
     if (get_subj_info == TRUE){
@@ -30,7 +30,11 @@ read <- function(data_folder, get_subj_info = FALSE){
     }
     full <- rbind(full, individual)
   }
-  fixed <- full[-1,]
+  if (nrow(full) > 0 && all(is.na(full[1, ]))) {
+    fixed <- full[-1, ]
+  } else {
+    fixed <- full
+  }
   return(fixed)
 }
 
@@ -40,6 +44,7 @@ eye_files <- dir(path = "../output/eyeData/fixationData", full.names = TRUE)
 
 all_imported_bx_files <- read(bx_files)
 all_fixation_files <- read(eye_files, get_subj_info = TRUE)
+
 
 # Clean up subject/run numbers
 all_fixation_files$run_num <- gsub("[^0-9]", "", all_fixation_files$run_num)
@@ -72,7 +77,9 @@ all_bx_files <- all_imported_bx_files %>%
            trialTypeExtraTarget1NoExtraTarget0) %>% 
   mutate(rt = ifelse(rt <= 200, NA, rt),
          rt = ifelse(rt > mean(rt, na.rm=TRUE)+3*sd(rt, na.rm = TRUE), NA, rt),
-         rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt)) %>% 
+         rt = ifelse(rt < mean(rt, na.rm=TRUE)-3*sd(rt, na.rm = TRUE), NA, rt),
+         Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("Distractor absent", "Distractor present"))) %>% 
   ungroup()
 
 # ======= SCENE & OVERLAP INFO JOIN =====================
@@ -92,55 +99,85 @@ overlap_info_long <- overlap_info %>%
 
 all_bx_files <- left_join(all_bx_files, overlap_info_long, by = c("scene_ind", "position_ind"))
 
-# ======= RT SUMMARY & PLOTTING =======
+# Summary of only overlaping positions
+overlap_summary <- all_bx_files  %>%
+  filter(overlapYes1No0 == 1) %>% 
+  group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
+  summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
+  mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
+
+overlap_aov <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
+                data = overlap_summary)
+summary(overlap_aov)
+eta_squared(overlap_aov, partial = TRUE, ci = 0.95)
+
+# RT summary stats by condition
+overlap_summary %>%
+  group_by(Validity, additionalTargetDistractor) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+# By distractor
+overlap_summary %>%
+  group_by(additionalTargetDistractor) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+# By validity
+overlap_summary %>%
+  group_by(Validity) %>%
+  summarise(
+    mean_RT = mean(meanRT),
+    sd_RT = sd(meanRT),
+    n = n() / 2,
+    se = sd_RT / sqrt(n)
+  )
+
+library(lme4)
+library(lmerTest)  # for p-values
+normal_model <- lmer(rt ~ Validity * additionalTargetDistractor + (1|sub_num), data = all_bx_files)
+summary(normal_model)
+
+y_model <- lmer(rt ~ Validity * additionalTargetDistractor * target_position_2 + (1|sub_num), 
+                data = all_bx_files %>% filter(overlapYes1No0 == 1))
+summary(y_model)
+# Model
+model <- lmer(rt ~ Validity * additionalTargetDistractor + target_position_2 + (1|sub_num), 
+              data = all_bx_files %>% filter(overlapYes1No0 == 1))
+# Model
+model <- lmer(rt ~ Validity * additionalTargetDistractor * target_position_2 + (1|sub_num), 
+              data = all_bx_files %>% filter(overlapYes1No0 == 1))
+
+all_bx_files %>% 
+ggplot(aes(x = target_position_2, y = rt, color = Validity)) +
+  stat_smooth(method = "lm", se = TRUE) +  # linear trend lines by Validity
+  labs(x = "Target Position", y = "Reaction Time", color = "Validity") +
+  theme_minimal()
+
+
+# ======= RT SUMMARY ==============
 bx_rt_summary <- all_bx_files  %>%
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
   mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
-         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
 
-unique_run_summary <- all_bx_files %>% 
-  group_by(sub_num) %>% 
-  summarise(unique_runs = n_distinct(run_num))
-
-# Helper for nice y-axis limits
-nicelimits <- function(x) {
-  range(scales::extended_breaks(only.loose = TRUE)(x))
-}
-
-# RT boxplot
-bx_rt_summary %>% 
-  ggplot(aes(y=meanRT, x=Validity, fill = additionalTargetDistractor))+
-  geom_boxplot()+
-  stat_summary(fun = "mean", 
-               geom = "point", 
-               shape = 18, 
-               size = 3,
-               position = position_dodge(width = .9))+
-  labs(title="Mean response time across validity\nand distractor presence",
-       x ="Validity", 
-       y = "Respnse Time (ms)",
-       fill = "Distractor Presence")+
-  theme_classic()+
-  theme(axis.text=element_text(size=15),
-        axis.title=element_text(size=19),
-        plot.title=element_text(size=23),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=14))+
-  scale_y_continuous(limits = nicelimits)+
-  scale_fill_manual(values=wes_palette(name="GrandBudapest1"))
-
-# ======= RT ANOVA & SUMMARY =======
+# ======= RT ANOVA & SUMMARY ==============
 aov_RT <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
               data = bx_rt_summary)
 summary(aov_RT)
 model.tables(aov_RT, "means")
 eta_squared(aov_RT, partial = TRUE, ci = 0.95)
 
-emmeans(aov_RT, ~ Validity)
-emmeans(aov_RT, ~ additionalTargetDistractor)
-emmeans(aov_RT, ~ Validity * additionalTargetDistractor)
-summary(emm)
 
 # RT summary stats by condition
 bx_rt_summary %>%
@@ -173,26 +210,24 @@ bx_rt_summary %>%
   )
 
 # ======= EPOCH (RUN) ANALYSIS =======
-aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
-                    data = bx_rt_epoch_summary)
-summary(aov_epoch_RT)
-
-# Pairwise tests
-lsd_results <- lsmeans(aov_RT, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
-summary(lsd_results)
-
-# ======= RT BY EPOCH PLOTTING =======
-# (Note: bx_rt_epoch_summary is created below)
-all_bx_files <- all_bx_files %>%
-  mutate()
 bx_rt_epoch_summary <- all_bx_files  %>% 
   group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0, run_num) %>% 
   summarise(meanRT = mean(rt, na.rm = TRUE)) %>% 
   mutate(Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
-         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+         additionalTargetDistractor  = factor(trialTypeExtraTarget1NoExtraTarget0, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
+
+aov_epoch_RT <- aov(meanRT ~ Validity*additionalTargetDistractor*run_num + Error(sub_num/(Validity*additionalTargetDistractor*run_num)), 
+                    data = bx_rt_epoch_summary)
+summary(aov_epoch_RT)
+eta_squared(aov_epoch_RT, partial = TRUE, ci = 0.95)
+
+
+# Pairwise tests
+lsd_results <- lsmeans(aov_epoch_RT, pairwise ~ Validity * run_num, adjust = "none")
+summary(lsd_results)
 
 bx_rt_epoch_summary %>% 
-  ggplot(aes(y=meanRT, x=Validity, fill = run_num))+
+lsd_results <- emmeans(aov_epoch_RT, pairwise ~ Validity * run_num, adjust = "none")
   geom_violin()+
   stat_summary(fun = "mean", 
                geom = "point", 
@@ -321,13 +356,12 @@ all_first_fixation_summary <- all_first_fixation %>%
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
-         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
 
 aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_first_fixation_summary)
 summary(aov_first_fixation)
 model.tables(aov_first_fixation, "means")
-eta_squared(aov_first_fixation, partial = TRUE, ci = 0.95)
 
 # First fixation summary stats
 all_first_fixation_summary %>%
@@ -357,44 +391,16 @@ all_first_fixation_summary %>%
     se = sd_percent_first_fixation / sqrt(n)
   )
 
-lsd_results <- lsmeans(aov_first_fixation, pairwise ~ Validity * additionalTargetDistractor, adjust = "none")
-summary(lsd_results)
-
 all_fixation_count <- all_fixation_files %>% 
   filter(run_num != 1,
          accuracy == 1)
-
-# First fixation violin plot
-all_first_fixation_summary %>% 
-  ggplot(aes(y=percent_first_fixation, 
-             x=Validity, 
-             fill = additionalTargetDistractor))+
-  geom_violin()+
-  stat_summary(fun = "mean", 
-               geom = "point", 
-               shape = 18, 
-               size = 3,
-               position = position_dodge(width = .9))+
-  labs(title="Percentage of first fixation on target\nacross validity and distractor presence",
-       x ="Validity", 
-       y = "Percentage of First Fixation",
-       fill = "Distractor Presence")+
-  theme_classic()+
-  theme(axis.text=element_text(size=15),
-        axis.title=element_text(size=19),
-        plot.title=element_text(size=23),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=14))+
-  scale_y_continuous(limits = c(.1, .7),
-                     breaks = seq(.1,.7, by = .1),
-                     labels = scales::percent)
 
 # ======= FIXATION COUNT ANALYSIS =====================
 all_fixation_count_summary <- all_fixation_count %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(avg_count = mean(first_fixation_number, na.rm = TRUE)) %>% 
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
-         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("No distractor present", "Distractor present")))
+         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
 
 aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_fixation_count_summary)
@@ -423,6 +429,7 @@ distractor_info <- distractor_df %>%
 
 distractor_df_joined <- left_join(distractor_df, distractor_info, by =c('sub_num'='sub_num',
                                                                         'extraTargetShapeNumber' = 'target_number'))
+
 distractor_df_joined <- distractor_df_joined %>%     
   mutate(validDistractorPositionValid0Invalid1 = ifelse(extraTargetShapeType == target_location_type.y, 0, 1)) %>% 
   group_by(sub_num, run_num, trial_num) %>%
@@ -432,8 +439,10 @@ distractor_df_joined <- distractor_df_joined %>%
     first_et_distractor_fixation_number = ifelse(first_et_distractor_fixation == 1, fixation_count, NA),
     first_non_et_distractor_fixation = ifelse(currentFixNonETDistractor == 1 & cumsum(currentFixNonETDistractor == 1) == 1, 1, 0),
     first_non_et_distractor_fixation_number = ifelse(first_non_et_distractor_fixation == 1, fixation_count, NA)) %>% 
-  filter(run_num != 1,
-         sub_num != 20,
+  filter(accuracy != 2,
+         run_num != 1,
+         unique_runs == 7,
+         overall_accuracy > 0.80,
          fixation_count == 1)
 
 first_fixation_extra_target_summary <- distractor_df_joined %>%
@@ -443,12 +452,11 @@ first_fixation_extra_target_summary <- distractor_df_joined %>%
   mutate(Validity = as.factor(thisTrialIncorrectTargetLocation),
          DistractorPositionValidity = as.factor(validDistractorPositionValid0Invalid1))
 
-first_fixation_extra_target_summary$Validity <- recode_factor(first_fixation_extra_target_summary$Validity, 
-                                                     '0' = "Valid", '1' = "Invalid")
-
-first_fixation_extra_target_summary$DistractorPositionValidity <- recode_factor(first_fixation_extra_target_summary$DistractorPositionValidity, 
-                                                                       '0' = "Valid", '1' = "Invalid")
-
+first_fixation_extra_target_summary <- first_fixation_extra_target_summary %>%
+  mutate(
+    Validity = recode_factor(Validity, '0' = "Valid", '1' = "Invalid"),
+    DistractorPositionValidity = recode_factor(DistractorPositionValidity, '0' = "Valid", '1' = "Invalid")
+  )
 
 extra_target_first_fix <- aov(percent_first_fixation ~ Validity*DistractorPositionValidity + Error(sub_num/(Validity*DistractorPositionValidity)), 
                           data = first_fixation_extra_target_summary)

@@ -54,9 +54,19 @@ fixation_proportion_violin <- all_first_fixation_summary %>%
 
 fixation_proportion_violin
 
-ggsave("~/Documents/posters/response_time_violin_E1.svg", response_time_violin, dpi = 300, width = 10, height = 8, units = "in")
-ggsave("~/Documents/posters/fixation_proportion_violin_E1.svg", fixation_proportion_violin, dpi = 300, width = 10, height = 8, units = "in")
+ggsave("~/Documents/posters/response_time_violin_E1.svg", 
+       response_time_violin, 
+       dpi = 300, 
+       width = 10, 
+       height = 8, 
+       units = "in")
 
+ggsave("~/Documents/posters/fixation_proportion_violin_E1.svg", 
+       fixation_proportion_violin, 
+       dpi = 300, 
+       width = 10, 
+       height = 8, 
+       units = "in")
 
 response_time_violin_no_atd <- bx_rt_summary %>% 
   ggplot(aes(y=meanRT, x = Validity, fill = Validity))+
