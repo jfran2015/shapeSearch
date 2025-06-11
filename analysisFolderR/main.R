@@ -362,6 +362,7 @@ aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDist
                           data = all_first_fixation_summary)
 summary(aov_first_fixation)
 model.tables(aov_first_fixation, "means")
+eta_squared(aov_first_fixation, partial = TRUE, ci = 0.95)
 
 # First fixation summary stats
 all_first_fixation_summary %>%
@@ -393,7 +394,9 @@ all_first_fixation_summary %>%
 
 all_fixation_count <- all_fixation_files %>% 
   filter(run_num != 1,
-         accuracy == 1)
+         accuracy == 1,
+         unique_runs == 7,
+         overall_accuracy > .80)
 
 # ======= FIXATION COUNT ANALYSIS =====================
 all_fixation_count_summary <- all_fixation_count %>% 
@@ -405,6 +408,36 @@ all_fixation_count_summary <- all_fixation_count %>%
 aov_fixation_count <- aov(avg_count ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
                           data = all_fixation_count_summary)
 summary(aov_fixation_count)
+model.tables(aov_fixation_count, "means")
+eta_squared(aov_fixation_count, partial = TRUE, ci = 0.95)
+
+# First fixation summary stats
+all_fixation_count_summary %>%
+  group_by(thisTrialIncorrectTargetLocation, thisTrialExtraTarget) %>%
+  summarise(
+    mean_avg_count = mean(avg_count),
+    sd_avg_count = sd(avg_count),
+    n = n() / 2,
+    se = sd_avg_count / sqrt(n)
+  )
+
+all_fixation_count_summary %>%
+  group_by(thisTrialExtraTarget) %>%
+  summarise(
+    mean_avg_count = mean(avg_count),
+    sd_avg_count = sd(avg_count),
+    n = n() / 2,
+    se = sd_avg_count / sqrt(n)
+  )
+
+all_fixation_count_summary %>%
+  group_by(thisTrialIncorrectTargetLocation) %>%
+  summarise(
+    mean_avg_count = mean(avg_count),
+    sd_avg_count = sd(avg_count),
+    n = n() / 2,
+    se = sd_avg_count / sqrt(n)
+  )
 
 # Fixation count violin plot
 all_fixation_count_summary %>% 
@@ -417,18 +450,27 @@ all_fixation_count_summary %>%
                position = position_dodge(width = .9))
 
 # ======= FIRST FIXATION & FIXATION COUNT ANALYSIS  FOR OVERLAPING REGIONS =====================
-joined_fixation_data <- left_join(joined_fixation_data, 
+joined_fixation_data <- left_join(all_fixation_files, 
+                                  all_imported_bx_files, 
+                                  by=c('sub_num'='sub_num', 
+                                       'trial_num'='trial_num', 
+                                       'run_num'='run_num'))
+
+
+scene_info_fixation_data <- left_join(joined_fixation_data, 
                                   scene_info, 
                                   by= c("sub_num",
                                         "run_num",
-                                        "trial_num"))
+                                        "trial_num"),
+                                  relationship = "many-to-many")
 
-joined_fixation_data <- joined_fixation_data %>%
-  mutate(tiral_num = trialNum)
+overlap_info_fixation_data <- left_join(scene_info_fixation_data, overlap_info_long, by = c("scene_ind", "position_ind"))
 
-joined_fixation_data <- left_join(joined_fixation_data, overlap_info_long, by = c("scene_ind", "position_ind"))
-
-all_first_fixation_overlap <- all_fixation_files %>% 
+all_first_fixation_overlap <- overlap_info_fixation_data %>%
+  mutate(tiral_num = trialNum,
+         accuracy = accuracy.x,
+         unique_runs = unique_runs.x,
+         overall_accuracy = overall_accuracy.x) %>% 
   filter(fixation_count == 1,
          run_num != 1,
          accuracy == 1,
@@ -436,19 +478,21 @@ all_first_fixation_overlap <- all_fixation_files %>%
          overall_accuracy > .80,
          overlapYes1No0 == 1)
 
-all_first_fixation_summary <- all_first_fixation %>% 
+overlap_all_first_fixation_summary <- all_first_fixation_overlap %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
          additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
 
-aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
-                          data = all_first_fixation_summary)
-summary(aov_first_fixation)
-model.tables(aov_first_fixation, "means")
+aov_overlap_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
+                          data = overlap_all_first_fixation_summary)
+summary(aov_overlap_first_fixation)
+model.tables(aov_overlap_first_fixation, "means")
+eta_squared(aov_overlap_first_fixation, partial = TRUE, ci = 0.95)
+
 
 # First fixation summary stats
-all_first_fixation_summary %>%
+overlap_all_first_fixation_summary %>%
   group_by(thisTrialIncorrectTargetLocation, thisTrialExtraTarget) %>%
   summarise(
     mean_percent_first_fixation = mean(percent_first_fixation),
@@ -457,7 +501,7 @@ all_first_fixation_summary %>%
     se = sd_percent_first_fixation / sqrt(n)
   )
 
-all_first_fixation_summary %>%
+overlap_all_first_fixation_summary %>%
   group_by(thisTrialExtraTarget) %>%
   summarise(
     mean_percent_first_fixation = mean(percent_first_fixation),
@@ -466,7 +510,7 @@ all_first_fixation_summary %>%
     se = sd_percent_first_fixation / sqrt(n)
   )
 
-all_first_fixation_summary %>%
+overlap_all_first_fixation_summary %>%
   group_by(thisTrialIncorrectTargetLocation) %>%
   summarise(
     mean_percent_first_fixation = mean(percent_first_fixation),
