@@ -416,6 +416,69 @@ all_fixation_count_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 
+# ======= FIRST FIXATION & FIXATION COUNT ANALYSIS  FOR OVERLAPING REGIONS =====================
+joined_fixation_data <- left_join(joined_fixation_data, 
+                                  scene_info, 
+                                  by= c("sub_num",
+                                        "run_num",
+                                        "trial_num"))
+
+joined_fixation_data <- joined_fixation_data %>%
+  mutate(tiral_num = trialNum)
+
+joined_fixation_data <- left_join(joined_fixation_data, overlap_info_long, by = c("scene_ind", "position_ind"))
+
+all_first_fixation_overlap <- all_fixation_files %>% 
+  filter(fixation_count == 1,
+         run_num != 1,
+         accuracy == 1,
+         unique_runs == 7,
+         overall_accuracy > .80,
+         overlapYes1No0 == 1)
+
+all_first_fixation_summary <- all_first_fixation %>% 
+  group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
+  summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
+  mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
+         additionalTargetDistractor  = factor(thisTrialExtraTarget, levels = c(0, 1), labels = c("Distractor absent", "Distractor present")))
+
+aov_first_fixation <- aov(percent_first_fixation ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
+                          data = all_first_fixation_summary)
+summary(aov_first_fixation)
+model.tables(aov_first_fixation, "means")
+
+# First fixation summary stats
+all_first_fixation_summary %>%
+  group_by(thisTrialIncorrectTargetLocation, thisTrialExtraTarget) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
+
+all_first_fixation_summary %>%
+  group_by(thisTrialExtraTarget) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
+
+all_first_fixation_summary %>%
+  group_by(thisTrialIncorrectTargetLocation) %>%
+  summarise(
+    mean_percent_first_fixation = mean(percent_first_fixation),
+    sd_percent_first_fixation = sd(percent_first_fixation),
+    n = n() / 2,
+    se = sd_percent_first_fixation / sqrt(n)
+  )
+
+all_fixation_count <- all_fixation_files %>% 
+  filter(run_num != 1,
+         accuracy == 1)
+
 # ======= DISTRACTOR ANALYSIS =====================
 distractor_df <- joined_fixation_data %>% 
   mutate(correctFixTarget = ifelse(previousFixationRect == targetPositionInds, 1, 0),
