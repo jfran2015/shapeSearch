@@ -178,7 +178,6 @@ summary(aov_RT)
 model.tables(aov_RT, "means")
 eta_squared(aov_RT, partial = TRUE, ci = 0.95)
 
-
 # RT summary stats by condition
 bx_rt_summary %>%
   group_by(Validity, additionalTargetDistractor) %>%
@@ -202,12 +201,148 @@ bx_rt_summary %>%
 # By validity
 bx_rt_summary %>%
   group_by(Validity) %>%
-  summarise(
-    mean_RT = mean(meanRT),
-    sd_RT = sd(meanRT),
-    n = n() / 2,
-    se = sd_RT / sqrt(n)
+  summarise(mean_RT = mean(meanRT),
+            sd_RT = sd(meanRT),
+            n = n() / 2,
+            se = sd_RT / sqrt(n))
+
+# ====== Rerun only for first presentation of each scene for each subj ======
+bx_rt_first <- all_bx_files %>%
+  group_by(sub_num, file_name) %>%
+  mutate(instance_number = row_number()) %>% 
+  ungroup()
+
+bx_rt_summary_first <- bx_rt_first %>%
+  filter(instance_number == 1) %>% 
+  group_by(sub_num, Validity, additionalTargetDistractor) %>% 
+  summarise(meanRT = mean(rt, na.rm = TRUE))
+
+aov_rt_first <- aov(meanRT ~ Validity*additionalTargetDistractor + Error(sub_num/(Validity*additionalTargetDistractor)), 
+                 data = bx_rt_summary_first)
+summary(aov_rt_first)
+model.tables(aov_rt_first, "means")
+eta_squared(aov_rt_first, partial = TRUE, ci = 0.95)
+
+# ======= Double analysis ============
+target_validity_info <- all_bx_files %>%
+  distinct(
+    sub_num,
+    target_number,
+    trialTypeValid0Invalid1,
+    target_location_type) %>%
+  mutate(
+    Validity = factor(trialTypeValid0Invalid1,
+                      levels = c(0, 1),
+                      labels = c("Valid", "Invalid"))) %>% 
+  filter(trialTypeValid0Invalid1 == 0)
+
+target_validity_info <- target_validity_info %>%
+  group_by(sub_num, target_location_type) %>%
+  mutate(
+    duplicate_location_type = n() > 1
+  ) %>%
+  ungroup()
+
+# Left join the duplicate_location_type flag back to the full dataset
+all_bx_files <- all_bx_files %>%
+  left_join(
+    target_validity_info %>%
+      select(sub_num, target_number, duplicate_location_type),
+    by = c("sub_num", "target_number")
   )
+
+bx_rt_summary_dup <- all_bx_files %>%
+  group_by(sub_num,
+           trialTypeValid0Invalid1,
+           duplicate_location_type) %>%
+  summarise(
+    meanRT = mean(rt, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1), labels = c("Valid", "Invalid")),
+    duplicate_location_type = factor(duplicate_location_type, levels = c(FALSE, TRUE),
+                                     labels = c("Unique Location", "Duplicate Location"))
+  )
+
+aov_RT_dup <- aov(meanRT ~ Validity * duplicate_location_type +
+                    Error(sub_num / (Validity * duplicate_location_type)),
+                  data = bx_rt_summary_dup)
+
+summary(aov_RT_dup)
+model.tables(aov_RT_dup, "means")
+
+eta_squared(aov_RT_dup, partial = TRUE, ci = 0.95)
+
+# ======= Lag Analysis ===============
+all_bx_files_lagged <- all_bx_files %>%
+  arrange(sub_num, run_num, trial_num) %>%
+  group_by(sub_num, run_num) %>%
+  mutate(
+    target_loc_lag1 = lag(target_location_type, 1),
+    target_loc_lag2 = lag(target_location_type, 2),
+    
+    lag1_repeat = target_location_type == target_loc_lag1,
+    lag2_repeat = target_location_type == target_loc_lag2
+  ) %>%
+  ungroup()
+
+bx_lag1_removed <- all_bx_files_lagged %>%
+  filter(!lag1_repeat)
+
+bx_rt_summary_lag1 <- bx_lag1_removed %>%
+  group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>%
+  summarise(
+    meanRT = mean(rt, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1),
+                      labels = c("Valid", "Invalid")),
+    additionalTargetDistractor = factor(trialTypeExtraTarget1NoExtraTarget0,
+                                        levels = c(0, 1),
+                                        labels = c("Distractor absent", "Distractor present"))
+  )
+
+aov_RT_lag1 <- aov(
+  meanRT ~ Validity * additionalTargetDistractor +
+    Error(sub_num / (Validity * additionalTargetDistractor)),
+  data = bx_rt_summary_lag1
+)
+
+summary(aov_RT_lag1)
+model.tables(aov_RT_lag1, "means")
+eta_squared(aov_RT_lag1, partial = TRUE, ci = 0.95)
+
+bx_lag2_removed <- all_bx_files_lagged %>%
+  filter(!lag2_repeat,
+         !lag1_repeat)
+
+bx_rt_summary_lag2 <- bx_lag2_removed %>%
+  group_by(sub_num, trialTypeValid0Invalid1, trialTypeExtraTarget1NoExtraTarget0) %>%
+  summarise(
+    meanRT = mean(rt, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    Validity = factor(trialTypeValid0Invalid1, levels = c(0, 1),
+                      labels = c("Valid", "Invalid")),
+    additionalTargetDistractor = factor(trialTypeExtraTarget1NoExtraTarget0,
+                                        levels = c(0, 1),
+                                        labels = c("Distractor absent", "Distractor present"))
+  )
+
+aov_RT_lag2 <- aov(
+  meanRT ~ Validity * additionalTargetDistractor +
+    Error(sub_num / (Validity * additionalTargetDistractor)),
+  data = bx_rt_summary_lag2
+)
+
+summary(aov_RT_lag2)
+model.tables(aov_RT_lag2, "means")
+eta_squared(aov_RT_lag2, partial = TRUE, ci = 0.95)
+
+
 
 # ======= EPOCH (RUN) ANALYSIS =======
 bx_rt_epoch_summary <- all_bx_files  %>% 
@@ -226,27 +361,7 @@ eta_squared(aov_epoch_RT, partial = TRUE, ci = 0.95)
 lsd_results <- lsmeans(aov_epoch_RT, pairwise ~ Validity * run_num, adjust = "none")
 summary(lsd_results)
 
-bx_rt_epoch_summary %>% 
 lsd_results <- emmeans(aov_epoch_RT, pairwise ~ Validity * run_num, adjust = "none")
-  geom_violin()+
-  stat_summary(fun = "mean", 
-               geom = "point", 
-               shape = 18, 
-               size = 3,
-               position = position_dodge(width = .9))+
-  labs(title="Mean response time across validity\nand distractor presence",
-       x ="Validity", 
-       y = "Respnse Time (ms)",
-       fill = "Distractor Presence")+
-  theme_classic()+
-  theme(axis.text=element_text(size=15),
-        axis.title=element_text(size=19),
-        plot.title=element_text(size=23),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=14))+
-  scale_y_continuous(limits = c(700, 2000),
-                     breaks = seq(700,2000, by = 100))+
-  scale_fill_brewer(palette="Set3")
 
 # ======= ACCURACY ANALYSIS =======
 all_bx_files_accuracy <- all_imported_bx_files %>%
@@ -324,17 +439,28 @@ all_fixation_files <- all_fixation_files %>%
          correctTarget = ifelse(previousFixationRect == targetPositionInds, 1, 0),
          trial_num = trialNum)
 
+# Deduplicate behavioral data so there's only 1 row per sub/run/trial
+bx_rt_unique <- bx_rt_first %>%
+  select(sub_num, run_num, trial_num, instance_number) %>%
+  distinct(sub_num, run_num, trial_num, .keep_all = TRUE)
+
 # Join fixation and behavioral data for accuracy info
-joined_fixation_data <- left_join(all_fixation_files, 
-                                  all_imported_bx_files, 
-                                  by=c('sub_num'='sub_num', 
-                                       'trial_num'='trial_num', 
-                                       'run_num'='run_num'))
+# Join everything together at once
+final_fixation_data <- all_fixation_files %>%
+  left_join(all_imported_bx_files, 
+            by = c("sub_num", "run_num", "trial_num")) %>%
+  left_join(bx_rt_unique, 
+            by = c("sub_num", "run_num", "trial_num"))
+
+# Check if the row count is now correct
+nrow(final_fixation_data) # Should match 32259
+
 
 # Add accuracy columns to fixation data
-all_fixation_files$accuracy <- joined_fixation_data$accuracy
-all_fixation_files$overall_accuracy <- joined_fixation_data$overall_accuracy
-all_fixation_files$unique_runs <- joined_fixation_data$unique_runs
+all_fixation_files$accuracy <- final_fixation_data$accuracy
+all_fixation_files$overall_accuracy <- final_fixation_data$overall_accuracy
+all_fixation_files$unique_runs <- final_fixation_data$unique_runs
+all_fixation_files$instance_number <- final_fixation_data$instance_number
 
 # Add fixation count/order columns
 all_fixation_files <- all_fixation_files %>%
@@ -353,6 +479,7 @@ all_first_fixation <- all_fixation_files %>%
          overall_accuracy > .80)
 
 all_first_fixation_summary <- all_first_fixation %>% 
+  filter(instance_number == 1) %>% 
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(percent_first_fixation = mean(correctTarget, na.rm = TRUE)) %>% 
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
@@ -399,7 +526,7 @@ all_fixation_count <- all_fixation_files %>%
          overall_accuracy > .80)
 
 # ======= FIXATION COUNT ANALYSIS =====================
-all_fixation_count_summary <- all_fixation_count %>% 
+all_fixation_count_summary <- all_fixation_count %>%
   group_by(sub_num, thisTrialExtraTarget, thisTrialIncorrectTargetLocation) %>% 
   summarise(avg_count = mean(first_fixation_number, na.rm = TRUE)) %>% 
   mutate(Validity = factor(thisTrialIncorrectTargetLocation, levels = c(0, 1), labels = c("Valid", "Invalid")),
@@ -579,5 +706,88 @@ first_fixation_extra_target_summary %>%
                size = 3,
                position = position_dodge(width = .9))
 # ======= END OF SCRIPT =====================
+trial_fixation <- all_fixation_count %>%
+  filter(!is.na(first_fixation_number)) %>% 
+  ungroup() %>%
+  mutate(first_fixation_number = factor(first_fixation_number,
+                                        ordered = TRUE),
+         Validity = thisTrialIncorrectTargetLocation,
+         additionalTargetDistractor = thisTrialExtraTarget)
+
+library(ordinal)
+
+ordinal_mixed <- clmm(
+  first_fixation_number ~ Validity * additionalTargetDistractor + (1 | sub_num),
+  data = trial_fixation,
+  link = "logit")
+
+summary(ordinal_mixed)
 
 
+
+library(lme4)
+
+# convert factors
+all_bx_files_accuracy <- all_bx_files_accuracy %>%
+  mutate(
+    Validity = as.factor(trialTypeValid0Invalid1),
+    additionalTargetDistractor = as.factor(trialTypeExtraTarget1NoExtraTarget0)
+  )
+
+# logistic mixed-effects model
+accuracy_model <- glmer(accuracy ~ Validity * additionalTargetDistractor + (1 | sub_num),
+                        data = all_bx_files_accuracy,
+                        family = binomial)
+
+summary(accuracy_model)
+
+#multi-level modeling
+trial_fixation_ml <- all_fixation_count %>%
+  filter(!is.na(first_fixation_number)) %>%
+  ungroup() %>%
+  mutate(
+    Validity = factor(thisTrialIncorrectTargetLocation),
+    additionalTargetDistractor = factor(thisTrialExtraTarget),
+    first_fixation_number = as.numeric(first_fixation_number)
+  )
+
+m1_max <- lmer(first_fixation_number ~ Validity * additionalTargetDistractor +
+                 (Validity * additionalTargetDistractor | sub_num), 
+               data = trial_fixation_ml, 
+               REML = FALSE)
+
+summary(m1_max)
+
+m2_noIntRE <- lmer(
+  first_fixation_number ~ Validity * additionalTargetDistractor +
+    (Validity + additionalTargetDistractor | sub_num),
+  data = trial_fixation_ml,
+  REML = FALSE
+)
+
+summary(m2_noIntRE)
+
+m3_uncorr <- lmer(
+  first_fixation_number ~ Validity * additionalTargetDistractor +
+    (Validity + additionalTargetDistractor || sub_num),
+  data = trial_fixation_ml,
+  REML = FALSE
+)
+
+summary(m3_uncorr)
+
+m4_intercept <- lmer(
+  first_fixation_number ~ Validity * additionalTargetDistractor +
+    (1 | sub_num),
+  data = trial_fixation_ml,
+  REML = FALSE
+)
+
+summary(m4_intercept)
+
+anova(m1_max, m2_noIntRE, m3_uncorr, m4_intercept)
+anova(m3_uncorr)   # Type III–like tests for fixed effects
+isSingular(m1_max)
+plot(m3_uncorr)
+qqnorm(resid(m3_uncorr))
+qqline(resid(m3_uncorr))

@@ -1,112 +1,92 @@
 library(tidyverse)
 library(RColorBrewer)
 library(svglite)
-
-dodge_width = 0.1
-
-lineSize = .71
-dodge_width = 0
-palatte_num = 7
+library(Rmisc)
 
 nicelimits <- function(x) {
   range(scales::extended_breaks(only.loose = TRUE)(x))
 }
 
-response_time_violin <- bx_rt_summary %>% 
-  ggplot(aes(y=meanRT, x = Validity, fill = additionalTargetDistractor))+
-  geom_violin()+
+# Compute within-subjects summary stats
+rt_summary_within <- summarySEwithin(
+  data = bx_rt_summary, 
+  measurevar = "meanRT", 
+  withinvars = c("Validity", "additionalTargetDistractor"), 
+  idvar = "sub_num", # your subject column
+  na.rm = TRUE
+)
+
+# Plot
+response_time_violin <- ggplot(rt_summary_within, 
+                               aes(y = meanRT,
+                                   x = Validity, 
+                                   fill = additionalTargetDistractor)) +
+  geom_violin(data = bx_rt_summary, 
+              alpha = 1) + # raw violins
   stat_summary(fun = mean, 
                geom = "point", 
                shape = 18, 
-               size = 4, 
-               color = "black")+
-  stat_summary(fun.data = mean_cl_normal,#get 95% Confidence Intervals; you can also set other kinds of error bars  
-               geom = "errorbar", #graph error bars
-               na.rm = T,
-               width = .1)+
-  ylab("Response Time (ms)")+
-  facet_grid(~additionalTargetDistractor)+
-  scale_fill_brewer(type = "qual", palette = palatte_num)+
-  theme_classic()+
+               size = 3, 
+               color = "black") +
+  geom_errorbar(aes(ymin = meanRT - ci, 
+                    ymax = meanRT + ci), 
+                width = .1, color = "black") +
+  ylab("Response Time (ms)") +
+  facet_grid(~additionalTargetDistractor) +
+  scale_fill_brewer(type = "qual", palette = palatte_num) +
+  theme_classic() +
+  theme(legend.position = "none")+
   scale_y_continuous(limits = nicelimits,
                      breaks = seq(800,2000, by = 100))
+
 response_time_violin
 
+# Compute within-subject summary stats
+fix_within_summary <- summarySEwithin(
+  data = all_first_fixation_summary,
+  measurevar = "percent_first_fixation",
+  withinvars = c("Validity", "additionalTargetDistractor"),
+  idvar = "sub_num" # replace with your subject column
+)
+
+# Plot with within-subject error bars
 fixation_proportion_violin <- all_first_fixation_summary %>% 
-  ggplot(aes(y=percent_first_fixation, x = Validity, fill = additionalTargetDistractor))+
-  geom_violin()+
+  ggplot(aes(y = percent_first_fixation, 
+             x = Validity, 
+             fill = additionalTargetDistractor)) +
+  geom_violin() +
   stat_summary(fun = mean, 
                geom = "point", 
                shape = 18, 
                size = 4, 
-               color = "black")+
-  stat_summary(fun.data = mean_cl_normal,#get 95% Confidence Intervals; you can also set other kinds of error bars  
-               geom = "errorbar", #graph error bars
-               na.rm = T,
-               width = .1)+
-  
-  ylab("Proportion of first fixation")+
-  facet_grid(~additionalTargetDistractor)+
-  scale_fill_brewer(type = "qual", palette = palatte_num)+
-  theme_classic()+
+               color = "black") +
+  geom_errorbar(data = fix_within_summary,
+                aes(y = percent_first_fixation,
+                    ymin = percent_first_fixation - ci,
+                    ymax = percent_first_fixation + ci),
+                width = .1,
+                color = "black") +
+  ylab("Proportion of first fixation") +
+  facet_grid(~additionalTargetDistractor) +
+  scale_fill_brewer(type = "qual", palette = palatte_num) +
+  theme_classic() +
+  theme(legend.position = "none")+
   scale_y_continuous(labels = scales::percent,
                      breaks = seq(.10,.80, by = .05))
 
 fixation_proportion_violin
 
-ggsave("~/Documents/posters/response_time_violin_E1.svg", 
+
+ggsave("~/Documents/posters/response_time_violin_E1_wseb.pdf", 
        response_time_violin, 
        dpi = 300, 
        width = 10, 
-       height = 8, 
+       height = 9, 
        units = "in")
 
-ggsave("~/Documents/posters/fixation_proportion_violin_E1.svg", 
+ggsave("~/Documents/posters/fixation_proportion_violin_E1_wseb.pdf", 
        fixation_proportion_violin, 
        dpi = 300, 
        width = 10, 
-       height = 8, 
+       height = 9, 
        units = "in")
-
-response_time_violin_no_atd <- bx_rt_summary %>% 
-  ggplot(aes(y=meanRT, x = Validity, fill = Validity))+
-  geom_violin()+
-  stat_summary(fun = mean, 
-               geom = "point", 
-               shape = 18, 
-               size = 4, 
-               color = "black")+
-  stat_summary(fun.data = mean_cl_normal,#get 95% Confidence Intervals; you can also set other kinds of error bars  
-               geom = "errorbar", #graph error bars
-               na.rm = T,
-               width = .1)+
-  ylab("Response Time (ms)")+
-  scale_fill_brewer(type = "qual", palette = palatte_num)+
-  theme_classic()+
-  scale_y_continuous(limits = nicelimits,
-                     breaks = seq(800,2000, by = 100))
-response_time_violin
-
-fixation_proportion_violin_no_atd <- all_first_fixation_summary %>% 
-  ggplot(aes(y=percent_first_fixation, x = Validity, fill = Validity))+
-  geom_violin()+
-  stat_summary(fun = mean, 
-               geom = "point", 
-               shape = 18, 
-               size = 4, 
-               color = "black")+
-  stat_summary(fun.data = mean_cl_normal,#get 95% Confidence Intervals; you can also set other kinds of error bars  
-               geom = "errorbar", #graph error bars
-               na.rm = T,
-               width = .1)+
-  ylab("Proportion of first fixation")+
-  scale_fill_brewer(type = "qual", palette = palatte_num)+
-  theme_classic()+
-  scale_y_continuous(labels = scales::percent,
-                     breaks = seq(.10,.80, by = .05))
-
-fixation_proportion_violin
-
-ggsave("~/Documents/posters/response_time_violin_E1_no_adt.svg", response_time_violin_no_atd, dpi = 300, width = 10, height = 8, units = "in")
-ggsave("~/Documents/posters/fixation_proportion_violin_E1_no_adt.svg", fixation_proportion_violin_no_atd, dpi = 300, width = 10, height = 8, units = "in")
-
